@@ -30,28 +30,20 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -101,24 +93,34 @@ class MainActivity : AppCompatActivity() {
     private val bannerWidth = 16.toDp
 
     /** 边角横幅画笔 */
-    private val sdkBannerPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val sdkBannerPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = "#A0B71C1C".toColorInt()
         style = Paint.Style.FILL
     }
-    private val debugBannerPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val debugBannerPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = "#A0B71C1C".toColorInt()
         style = Paint.Style.FILL
     }
-    private val capsuleFillPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val capsuleFillPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = "#99FFFFFF".toColorInt()
         style = Paint.Style.FILL
     }
-    private val capsuleStrokePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val capsuleStrokePaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = "#19000000".toColorInt()
         style = Paint.Style.STROKE
         strokeWidth = 1.toDp.toFloat()
     }
-    private val capsuleDividerPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val capsuleDividerPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = "#19000000".toColorInt()
         style = Paint.Style.STROKE
         strokeWidth = 1.toDp.toFloat()
@@ -128,22 +130,21 @@ class MainActivity : AppCompatActivity() {
     /**
      * 横幅文字画笔
      */
-    private val sdkBannerTextPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val sdkBannerTextPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = android.graphics.Color.WHITE
         textSize = 10.toSp.toFloat()
         style = Paint.Style.FILL
         textAlign = Paint.Align.LEFT
     }
-    private val debugBannerTextPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val debugBannerTextPaint: Paint = Paint(
+        Paint.ANTI_ALIAS_FLAG,
+    ).apply {
         color = android.graphics.Color.WHITE
         textSize = 10.toSp.toFloat()
         style = Paint.Style.FILL
         textAlign = Paint.Align.LEFT
-    }
-    private val versionTextPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = "#80808080".toColorInt()
-        textSize = 20.toSp.toFloat()
-        textAlign = Paint.Align.CENTER
     }
 
 
@@ -163,8 +164,6 @@ class MainActivity : AppCompatActivity() {
      */
     private var sdkBannerText: String = "ECOSED"
     private var debugBannerText: String = "DEBUG"
-    private val activationText: String = "激活 TrebleKit"
-    private val activationTextSummary: String = "切换到设置页面进行激活"
 
     private val sdkBannerPointList by lazy {
         mutableListOf<Point>()
@@ -184,15 +183,13 @@ class MainActivity : AppCompatActivity() {
     /** 胶囊又边距 */
     private val capsuleRightPadding = 16.toDp
 
-    private val navBarHeight: Int = 96.toDp
-
-    private val activationTextPadding: Int = 16.toDp
-
     /** 胶囊顶部边距 */
     private val capsuleTopPadding = ((65.toDp) - capsuleHeight) / 2
 
     /** 胶囊圆角半径 */
     private var capsuleRadius = 20.toDp.toFloat()
+
+    private var mCapsuleToEnd: Int = 0
 
     /* 是否显示调试信息 **/
     private val show: Boolean = BuildConfig.DEBUG
@@ -529,14 +526,7 @@ class MainActivity : AppCompatActivity() {
 //        fun attachDelegateBaseContext()
     }
 
-    private interface ICompatTheme {
-        /**
-         * 启用动态颜色
-         */
-        fun MainActivity.enableDynamicColors()
-    }
-
-    private interface IComposeTheme {
+    private interface ITheme {
         /**
          * Compose 主题
          *
@@ -553,7 +543,26 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private interface ITheme : IComposeTheme, ICompatTheme
+    private interface IContent {
+
+        @Composable
+        @UiComposable
+        fun Content()
+    }
+
+    private interface IColors {
+        val purple80: Color
+        val purpleGrey80: Color
+        val pink80: Color
+
+        val purple40: Color
+        val purpleGrey40: Color
+        val pink40: Color
+    }
+
+    private interface ITypography {
+        val typography: Typography
+    }
 
 
     private interface SdkView {
@@ -1415,9 +1424,7 @@ class MainActivity : AppCompatActivity() {
             enableEdgeToEdge()
 
 
-            compatThemeScope {
-                enableDynamicColors()
-            }
+
             val f: SdkView = mViewFactory.create()
             val overlay = f.getView()
 
@@ -1531,7 +1538,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var mOverlayEndPadding: Int = 0
 
     private val mComposeOverlay: View by lazy {
         return@lazy object : FrameLayout(
@@ -1585,7 +1591,7 @@ class MainActivity : AppCompatActivity() {
                 bottom: Int,
             ) {
                 if (changed) {
-                    mOverlayEndPadding = paddingRight
+                    mCapsuleToEnd = paddingRight
                     // 起始位置偏移量，用于放置第一个按钮
                     var leftOffset = 0
                     // 遍历子视图
@@ -1686,6 +1692,146 @@ class MainActivity : AppCompatActivity() {
              */
             override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
                 return false
+            }
+        }
+    }
+
+    /**
+     ***********************************************************************************************
+     *
+     * Jetpack Compose 布局
+     *
+     ***********************************************************************************************
+     */
+
+    private val mColors: IColors = object : IColors {
+        override val purple80: Color = Color(0xFFD0BCFF)
+        override val purpleGrey80: Color = Color(0xFFCCC2DC)
+        override val pink80: Color = Color(0xFFEFB8C8)
+
+        override val purple40: Color = Color(0xFF6650a4)
+        override val purpleGrey40: Color = Color(0xFF625b71)
+        override val pink40: Color = Color(0xFF7D5260)
+    }
+
+    private val mTypography: ITypography = object : ITypography {
+
+        override val typography = Typography(
+            bodyLarge = TextStyle(
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+                letterSpacing = 0.5.sp,
+            )
+        )
+    }
+
+    private val mTheme: ITheme = object : ITheme {
+
+        private val darkColorScheme = darkColorScheme(
+            primary = mColors.purple80,
+            secondary = mColors.purpleGrey80,
+            tertiary = mColors.pink80,
+        )
+
+        private val lightColorScheme = lightColorScheme(
+            primary = mColors.purple40,
+            secondary = mColors.purpleGrey40,
+            tertiary = mColors.pink40,
+        )
+
+        /**
+         * 主题
+         */
+        @Composable
+        override fun EbKitTheme(
+            darkTheme: Boolean, dynamicColor: Boolean, content: @Composable () -> Unit,
+        ) {
+            val colorScheme = when {
+                dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                    val context = LocalContext.current
+                    if (darkTheme) {
+                        dynamicDarkColorScheme(context)
+                    } else {
+                        dynamicLightColorScheme(context)
+                    }
+                }
+
+                darkTheme -> darkColorScheme
+                else -> lightColorScheme
+            }
+
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = mTypography.typography,
+                content = content,
+            )
+        }
+    }
+
+    private val mContent: IContent = object : IContent {
+
+        @Composable
+        override fun Content() {
+            ThemeScope {
+                EbKitTheme {
+                    ActivityMain()
+                }
+            }
+        }
+
+        @Composable
+        @OptIn(ExperimentalMaterial3Api::class)
+        private fun ActivityMain() {
+            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                end = with(LocalDensity.current) {
+                                    return@with (capsuleWidth + capsuleRightPadding + mCapsuleToEnd).toDp()
+                                },
+                            ),
+                        title = {
+                            Text("EbKit")
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = {},
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Settings, contentDescription = null
+                                )
+                            }
+                            IconButton(
+                                onClick = {},
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert, contentDescription = null
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(),
+                        scrollBehavior = scrollBehavior,
+                    )
+                },
+            ) { innerPadding ->
+                LazyColumn(
+                    contentPadding = innerPadding, // 使用 scaffold 的内边距以避免内容被遮挡
+                    modifier = Modifier.fillMaxSize() // 使 LazyColumn 填充剩余空间
+                ) {
+                    items(100) { index -> // 假设有100个项目
+                        Card(
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            Text(text = "Item $index", modifier = Modifier.padding(16.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -1884,24 +2030,6 @@ class MainActivity : AppCompatActivity() {
             capsuleRadius,
             capsuleRadius,
             Path.Direction.CW,
-        )
-    }
-
-
-    private fun ViewGroup.drawActivationText(canvas: Canvas) {
-//        val activationTextWidth = versionTextPaint.measureText(activationText)
-
-        canvas.drawText(
-            activationText,
-            (viewWidth / 2).toFloat(),
-            (viewHeight - paddingBottom - navBarHeight - activationTextPadding - versionTextPaint.textSize).toFloat(),
-            versionTextPaint,
-        )
-        canvas.drawText(
-            activationTextSummary,
-            (viewWidth / 2).toFloat(),
-            (viewHeight - paddingBottom - navBarHeight - activationTextPadding).toFloat(),
-            versionTextPaint,
         )
     }
 
@@ -2219,7 +2347,6 @@ class MainActivity : AppCompatActivity() {
             Log.w(TAG, "Failed launching microG Settings", e)
             Toast.makeText(context, "toast_not_installed", Toast.LENGTH_LONG).show()
         }
-
     }
 
 
@@ -2402,18 +2529,15 @@ class MainActivity : AppCompatActivity() {
     )
 
     @Composable
-    private fun MainActivity.ComposeThemeScope(
-        block: @Composable IComposeTheme.() -> Unit,
+    private fun MainActivity.ThemeScope(
+        block: @Composable ITheme.() -> Unit,
     ) = block.invoke(mTheme)
-
-    private fun MainActivity.compatThemeScope(
-        block: ICompatTheme.() -> Unit,
-    ) = block.invoke(mTheme)
-
 
     private val Float.toDp: Int
         get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, this@toDp, Resources.getSystem().displayMetrics
+            TypedValue.COMPLEX_UNIT_DIP,
+            this@toDp,
+            Resources.getSystem().displayMetrics,
         ).toInt()
 
     private val Int.toDp: Int
@@ -2425,7 +2549,9 @@ class MainActivity : AppCompatActivity() {
 
     private val Float.toSp: Int
         get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_SP, this@toSp, Resources.getSystem().displayMetrics
+            TypedValue.COMPLEX_UNIT_SP,
+            this@toSp,
+            Resources.getSystem().displayMetrics,
         ).toInt()
 
     private val Int.toSp: Int
@@ -2447,80 +2573,6 @@ class MainActivity : AppCompatActivity() {
     private inline val Any?.isNotNull: Boolean
         get() = this@isNotNull != null
 
-    private interface IContent {
-
-        @Composable
-        @UiComposable
-        fun Content()
-    }
-
-    private val mContent: IContent = object : IContent {
-        @Composable
-        override fun Content() {
-            ComposeThemeScope {
-                EbKitTheme {
-                    ActivityMain()
-                }
-            }
-        }
-
-        @Composable
-        @OptIn(ExperimentalMaterial3Api::class)
-        private fun ActivityMain() {
-            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                topBar = {
-                    TopAppBar(
-                        modifier = Modifier.fillMaxWidth().padding(
-                            end = with(LocalDensity.current) {
-                                return@with (capsuleWidth + capsuleRightPadding + mOverlayEndPadding).toDp()
-                            },
-                        ),
-                        title = {
-                            Text("EbKit")
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {},
-                            ) {
-                                Icon(imageVector = Icons.Outlined.Settings, contentDescription = null)
-                            }
-                            IconButton(
-                                onClick = {},
-                            ) {
-                                Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = null)
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(),
-                        scrollBehavior = scrollBehavior,
-                    )
-                },
-            ) { innerPadding ->
-                LazyColumn(
-                    contentPadding = innerPadding, // 使用 scaffold 的内边距以避免内容被遮挡
-                    modifier = Modifier.fillMaxSize() // 使 LazyColumn 填充剩余空间
-                ) {
-                    items(100) { index -> // 假设有100个项目
-                        Card(
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Text(text = "Item $index", modifier = Modifier.padding(16.dp))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    /**
-     ***********************************************************************************************
-     *
-     * Jetpack Compose 布局
-     *
-     ***********************************************************************************************
-     */
 
     @Composable
     @EbKitPreview
@@ -2529,89 +2581,6 @@ class MainActivity : AppCompatActivity() {
             Content()
         }
     }
-
-    private object Color {
-        val Purple80 = Color(0xFFD0BCFF)
-        val PurpleGrey80 = Color(0xFFCCC2DC)
-        val Pink80 = Color(0xFFEFB8C8)
-
-        val Purple40 = Color(0xFF6650a4)
-        val PurpleGrey40 = Color(0xFF625b71)
-        val Pink40 = Color(0xFF7D5260)
-    }
-
-
-    private interface ITypography {
-        val typography: Typography
-    }
-
-
-    private val mTypography : ITypography = object : ITypography {
-
-        override val typography = Typography(
-            bodyLarge = TextStyle(
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                letterSpacing = 0.5.sp,
-            )
-        )
-    }
-
-
-    private val mTheme: ITheme = object : ITheme {
-
-        private val DarkColorScheme = darkColorScheme(
-            primary = Color.Purple80,
-            secondary = Color.PurpleGrey80,
-            tertiary = Color.Pink80,
-        )
-
-        private val LightColorScheme = lightColorScheme(
-            primary = Color.Purple40,
-            secondary = Color.PurpleGrey40,
-            tertiary = Color.Pink40,
-        )
-
-        /**
-         * 启用动态颜色
-         */
-        override fun MainActivity.enableDynamicColors() {
-            DynamicColors.applyToActivityIfAvailable(
-                this@enableDynamicColors
-            )
-        }
-
-        /**
-         * 主题
-         */
-        @Composable
-        override fun EbKitTheme(
-            darkTheme: Boolean, dynamicColor: Boolean, content: @Composable () -> Unit,
-        ) {
-            val colorScheme = when {
-                dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                    val context = LocalContext.current
-                    if (darkTheme) {
-                        dynamicDarkColorScheme(context)
-                    } else {
-                        dynamicLightColorScheme(context)
-                    }
-                }
-
-                darkTheme -> DarkColorScheme
-                else -> LightColorScheme
-            }
-
-            MaterialTheme(
-                colorScheme = colorScheme,
-                typography = mTypography.typography,
-                content = content,
-            )
-        }
-    }
-
 
     /**
      * 资源
