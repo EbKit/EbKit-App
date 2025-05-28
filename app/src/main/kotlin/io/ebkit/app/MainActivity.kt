@@ -35,17 +35,23 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -59,6 +65,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -609,7 +617,7 @@ class MainActivity : AppCompatActivity() {
         uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL,
         wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE,
     )
-    private annotation class EbKitPreview
+    private annotation class SharpPreview
 
     /**
      * 基本插件
@@ -1936,17 +1944,27 @@ class MainActivity : AppCompatActivity() {
 
         @Composable
         private fun HomeDestination(navController: NavController) {
-            val capsulePadding = rememberCapsulePadding()
-            var expanded by remember {
+            val capsulePadding: Dp = rememberCapsulePadding()
+            var expanded: Boolean by remember {
                 mutableStateOf(false)
             }
+            val scroll = rememberScrollState()
+            val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+                rememberTopAppBarState()
+            )
             Scaffold(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(
+                        connection = scrollBehavior.nestedScrollConnection
+                    ),
                 topBar = {
-                    TopAppBar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = capsulePadding),
+                    LargeTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TopAppBarDefaults.topAppBarColors(
+//                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+//                            titleContentColor = MaterialTheme.colorScheme.primary,
+                        ),
                         title = {
                             Text("Home")
                         },
@@ -1972,6 +1990,9 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                             IconButton(
+                                modifier = Modifier.padding(
+                                    end = capsulePadding,
+                                ),
                                 onClick = {
                                     expanded = !expanded
                                 },
@@ -1997,8 +2018,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(),
-                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+                        scrollBehavior = scrollBehavior
                     )
                 },
             ) { innerPadding ->
@@ -2008,7 +2028,24 @@ class MainActivity : AppCompatActivity() {
                         .padding(paddingValues = innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Hello")
+
+                    
+
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(100) {
+                            Text(
+                                text = "Item $it", modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+
+                    
+                    
                 }
             }
         }
@@ -2783,9 +2820,11 @@ class MainActivity : AppCompatActivity() {
     private inline val Any?.isNotNull: Boolean
         get() = this@isNotNull != null
 
-
+    /**
+     * 布局预览
+     */
     @Composable
-    @EbKitPreview
+    @SharpPreview
     private fun Preview() {
         ContentScope {
             Content()
