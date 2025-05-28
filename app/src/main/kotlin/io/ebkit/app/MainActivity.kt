@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -77,7 +78,6 @@ import androidx.lifecycle.LifecycleOwner
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.PermissionUtils
-import com.google.android.material.color.DynamicColors
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
 import kotlin.math.pow
@@ -188,8 +188,6 @@ class MainActivity : AppCompatActivity() {
 
     /** 胶囊圆角半径 */
     private var capsuleRadius = 20.toDp.toFloat()
-
-    private var mCapsuleToEnd: Int = 0
 
     /* 是否显示调试信息 **/
     private val show: Boolean = BuildConfig.DEBUG
@@ -1424,7 +1422,6 @@ class MainActivity : AppCompatActivity() {
             enableEdgeToEdge()
 
 
-
             val f: SdkView = mViewFactory.create()
             val overlay = f.getView()
 
@@ -1591,7 +1588,6 @@ class MainActivity : AppCompatActivity() {
                 bottom: Int,
             ) {
                 if (changed) {
-                    mCapsuleToEnd = paddingRight
                     // 起始位置偏移量，用于放置第一个按钮
                     var leftOffset = 0
                     // 遍历子视图
@@ -1770,6 +1766,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getCapsulePadding(): Int {
+        return capsuleWidth + capsuleRightPadding + mComposeOverlay.paddingRight
+    }
+
     private val mContent: IContent = object : IContent {
 
         @Composable
@@ -1784,7 +1784,6 @@ class MainActivity : AppCompatActivity() {
         @Composable
         @OptIn(ExperimentalMaterial3Api::class)
         private fun ActivityMain() {
-            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
@@ -1792,8 +1791,12 @@ class MainActivity : AppCompatActivity() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                end = with(LocalDensity.current) {
-                                    return@with (capsuleWidth + capsuleRightPadding + mCapsuleToEnd).toDp()
+                                end = if (!LocalInspectionMode.current) {
+                                    with(LocalDensity.current) {
+                                        return@with getCapsulePadding().toDp()
+                                    }
+                                } else {
+                                    0.dp
                                 },
                             ),
                         title = {
@@ -1804,19 +1807,21 @@ class MainActivity : AppCompatActivity() {
                                 onClick = {},
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.Settings, contentDescription = null
+                                    imageVector = Icons.Outlined.Settings,
+                                    contentDescription = null,
                                 )
                             }
                             IconButton(
                                 onClick = {},
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.MoreVert, contentDescription = null
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = null,
                                 )
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(),
-                        scrollBehavior = scrollBehavior,
+                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
                     )
                 },
             ) { innerPadding ->
