@@ -30,15 +30,18 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,14 +51,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Typography
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -65,6 +78,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -75,11 +89,21 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.PermissionUtils
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
+import kotlinx.serialization.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -846,6 +870,35 @@ class MainActivity : AppCompatActivity() {
         val x: Float,
         val y: Float,
     )
+
+    /**
+     * 路由地址
+     *
+     * @param label 导航栏标题
+     * @param route 路由对象
+     * @param icon 导航栏图标
+     */
+    private data class AppDestination<T>(
+        val label: String,
+        val route: T,
+        val icon: ImageVector,
+    )
+
+    /**
+     * 主页路由对象
+     *
+     * 需要序列化不能私有
+     */
+    @Serializable
+    data object Home
+
+    /**
+     * 设置页路由对象
+     *
+     * 需要序列化不能私有
+     */
+    @Serializable
+    data object Settings
 
     /**
      ***********************************************************************************************
@@ -1766,12 +1819,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getCapsulePadding(): Int {
-        return capsuleWidth + capsuleRightPadding + mComposeOverlay.paddingRight
-    }
-
+    @OptIn(ExperimentalMaterial3Api::class)
     private val mContent: IContent = object : IContent {
 
+        /**
+         * 布局
+         */
         @Composable
         override fun Content() {
             ThemeScope {
@@ -1781,30 +1834,137 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * 获取胶囊按钮右填充
+         */
         @Composable
-        @OptIn(ExperimentalMaterial3Api::class)
+        private fun rememberCapsulePadding(): Dp {
+            return if (!LocalInspectionMode.current) {
+                with(LocalDensity.current) {
+                    val width = capsuleWidth.toDp()
+                    val right = capsuleRightPadding.toDp()
+                    val padding = mComposeOverlay.paddingRight.toDp()
+                    return@with width + right + padding
+                }
+            } else {
+                0.dp
+            }
+        }
+
+        /**
+         * MainActivity布局
+         */
+        @Composable
         private fun ActivityMain() {
+            val appDestination = listOf(
+                AppDestination<MainActivity.Home>(
+                    label = "Home",
+                    route = MainActivity.Home,
+                    icon = Icons.Filled.Home,
+                ),
+                AppDestination<MainActivity.Settings>(
+                    label = "Settings",
+                    route = MainActivity.Settings,
+                    icon = Icons.Filled.Settings,
+                ),
+            )
+            val navController = rememberNavController()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            val adaptiveInfo = currentWindowAdaptiveInfo()
+            val customNavSuiteType: NavigationSuiteType = with(adaptiveInfo) {
+                return@with when (windowSizeClass.windowWidthSizeClass) {
+                    WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+                    WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+                    WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
+                    else -> NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo)
+                }
+            }
+            NavigationSuiteScaffold(
+                navigationSuiteItems = {
+                    appDestination.forEach { destination ->
+                        item(
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = destination.label,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = destination.label,
+                                )
+                            },
+                            selected = currentDestination?.hierarchy?.any {
+                                it.hasRoute(
+                                    route = destination.route::class,
+                                )
+                            } == true,
+                            onClick = {
+                                navController.navigate(
+                                    route = destination.route,
+                                ) {
+                                    popUpTo(
+                                        id = navController.graph.findStartDestination().id,
+                                    ) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            alwaysShowLabel = false,
+                        )
+                    }
+                },
+                layoutType = customNavSuiteType,
+            ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = MainActivity.Home,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    composable<MainActivity.Home> {
+                        HomeDestination(navController = navController)
+                    }
+                    composable<MainActivity.Settings> {
+                        SettingsDestination()
+                    }
+                }
+            }
+        }
+
+        @Composable
+        private fun HomeDestination(navController: NavController) {
+            val capsulePadding = rememberCapsulePadding()
+            var expanded by remember {
+                mutableStateOf(false)
+            }
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
                     TopAppBar(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(
-                                end = if (!LocalInspectionMode.current) {
-                                    with(LocalDensity.current) {
-                                        return@with getCapsulePadding().toDp()
-                                    }
-                                } else {
-                                    0.dp
-                                },
-                            ),
+                            .padding(end = capsulePadding),
                         title = {
-                            Text("EbKit")
+                            Text("Home")
                         },
                         actions = {
                             IconButton(
-                                onClick = {},
+                                onClick = {
+                                    navController.navigate(
+                                        route = MainActivity.Settings
+                                    ) {
+                                        popUpTo(
+                                            id = navController.graph.findStartDestination().id
+                                        ) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Settings,
@@ -1812,12 +1972,29 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                             IconButton(
-                                onClick = {},
+                                onClick = {
+                                    expanded = !expanded
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
                                     contentDescription = null,
                                 )
+                                DropdownMenu(
+                                    expanded = expanded, onDismissRequest = {
+                                        expanded = false
+                                    }) {
+                                    DropdownMenuItem(text = {
+                                        Text("Stop")
+                                    }, onClick = {
+                                        expanded = !expanded
+                                    })
+                                    DropdownMenuItem(text = {
+                                        Text("About")
+                                    }, onClick = {
+                                        expanded = !expanded
+                                    })
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(),
@@ -1825,17 +2002,45 @@ class MainActivity : AppCompatActivity() {
                     )
                 },
             ) { innerPadding ->
-                LazyColumn(
-                    contentPadding = innerPadding, // 使用 scaffold 的内边距以避免内容被遮挡
-                    modifier = Modifier.fillMaxSize() // 使 LazyColumn 填充剩余空间
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues = innerPadding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(100) { index -> // 假设有100个项目
-                        Card(
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Text(text = "Item $index", modifier = Modifier.padding(16.dp))
-                        }
-                    }
+                    Text("Hello")
+                }
+            }
+        }
+
+        @Composable
+        private fun SettingsDestination() {
+            val capsulePadding = rememberCapsulePadding()
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = capsulePadding),
+                        title = {
+                            Text("Settings")
+                        },
+                        actions = {
+
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(),
+                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+                    )
+                },
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues = innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+
                 }
             }
         }
