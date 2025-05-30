@@ -31,27 +31,27 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Badge
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -890,6 +890,7 @@ class MainActivity : AppCompatActivity() {
         val label: String,
         val route: T,
         val icon: ImageVector,
+        val selectedIcon: ImageVector,
     )
 
     /**
@@ -1803,7 +1804,9 @@ class MainActivity : AppCompatActivity() {
          */
         @Composable
         override fun EbKitTheme(
-            darkTheme: Boolean, dynamicColor: Boolean, content: @Composable () -> Unit,
+            darkTheme: Boolean,
+            dynamicColor: Boolean,
+            content: @Composable () -> Unit,
         ) {
             val colorScheme = when {
                 dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -1846,17 +1849,17 @@ class MainActivity : AppCompatActivity() {
          * 获取胶囊按钮右填充
          */
         @Composable
-        private fun rememberCapsulePadding(): Dp {
-            return if (!LocalInspectionMode.current) {
-                with(LocalDensity.current) {
-                    val width = capsuleWidth.toDp()
-                    val right = capsuleRightPadding.toDp()
-                    val padding = mComposeOverlay.paddingRight.toDp()
-                    return@with width + right + padding
-                }
-            } else {
-                0.dp
-            }
+        private fun rememberCapsulePadding(): PaddingValues {
+            return PaddingValues(
+                end = if (!LocalInspectionMode.current) {
+                    with(receiver = LocalDensity.current) {
+                        val width: Dp = capsuleWidth.toDp()
+                        val padding: Dp = capsuleRightPadding.toDp()
+                        val safe: Dp = mComposeOverlay.paddingRight.toDp()
+                        return@with width + padding + safe
+                    }
+                } else 0.dp,
+            )
         }
 
         /**
@@ -1868,12 +1871,14 @@ class MainActivity : AppCompatActivity() {
                 AppDestination<MainActivity.Home>(
                     label = "Home",
                     route = MainActivity.Home,
-                    icon = Icons.Filled.Home,
+                    icon = Icons.Outlined.Home,
+                    selectedIcon = Icons.Filled.Home,
                 ),
                 AppDestination<MainActivity.Settings>(
                     label = "Settings",
                     route = MainActivity.Settings,
-                    icon = Icons.Filled.Settings,
+                    icon = Icons.Outlined.Settings,
+                    selectedIcon = Icons.Filled.Settings,
                 ),
             )
             val navController = rememberNavController()
@@ -1891,38 +1896,40 @@ class MainActivity : AppCompatActivity() {
             NavigationSuiteScaffold(
                 navigationSuiteItems = {
                     appDestination.forEach { destination ->
-                        item(
-                            icon = {
-                                Icon(
-                                    imageVector = destination.icon,
-                                    contentDescription = destination.label,
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = destination.label,
-                                )
-                            },
-                            selected = currentDestination?.hierarchy?.any {
-                                it.hasRoute(
-                                    route = destination.route::class,
-                                )
-                            } == true,
-                            onClick = {
-                                navController.navigate(
-                                    route = destination.route,
+                        item(icon = {
+                            Icon(
+                                imageVector = if (currentDestination?.hierarchy?.any {
+                                        return@any it.hasRoute(
+                                            route = destination.route::class
+                                        )
+                                    } == true) {
+                                    destination.selectedIcon
+                                } else {
+                                    destination.icon
+                                },
+                                contentDescription = destination.label,
+                            )
+                        }, modifier = Modifier, enabled = true, label = {
+                            Text(text = destination.label)
+                        }, selected = currentDestination?.hierarchy?.any {
+                            return@any it.hasRoute(
+                                route = destination.route::class
+                            )
+                        } == true, onClick = {
+                            navController.navigate(
+                                route = destination.route,
+                            ) {
+                                popUpTo(
+                                    id = navController.graph.findStartDestination().id,
                                 ) {
-                                    popUpTo(
-                                        id = navController.graph.findStartDestination().id,
-                                    ) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                    saveState = true
                                 }
-                            },
-                            alwaysShowLabel = false,
-                        )
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }, alwaysShowLabel = false, badge = {
+                            Badge()
+                        })
                     }
                 },
                 layoutType = customNavSuiteType,
@@ -1944,14 +1951,14 @@ class MainActivity : AppCompatActivity() {
 
         @Composable
         private fun HomeDestination(navController: NavController) {
-            val capsulePadding: Dp = rememberCapsulePadding()
+            val capsulePadding: PaddingValues = rememberCapsulePadding()
+            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+                rememberTopAppBarState()
+            )
             var expanded: Boolean by remember {
                 mutableStateOf(false)
             }
             val scroll = rememberScrollState()
-            val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-                rememberTopAppBarState()
-            )
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1959,39 +1966,16 @@ class MainActivity : AppCompatActivity() {
                         connection = scrollBehavior.nestedScrollConnection
                     ),
                 topBar = {
-                    LargeTopAppBar(
+                    TopAppBar(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = TopAppBarDefaults.topAppBarColors(
-//                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-//                            titleContentColor = MaterialTheme.colorScheme.primary,
-                        ),
+                        colors = TopAppBarDefaults.topAppBarColors(),
                         title = {
                             Text("Home")
                         },
                         actions = {
                             IconButton(
-                                onClick = {
-                                    navController.navigate(
-                                        route = MainActivity.Settings
-                                    ) {
-                                        popUpTo(
-                                            id = navController.graph.findStartDestination().id
-                                        ) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Settings,
-                                    contentDescription = null,
-                                )
-                            }
-                            IconButton(
                                 modifier = Modifier.padding(
-                                    end = capsulePadding,
+                                    paddingValues = capsulePadding,
                                 ),
                                 onClick = {
                                     expanded = !expanded
@@ -2002,19 +1986,51 @@ class MainActivity : AppCompatActivity() {
                                     contentDescription = null,
                                 )
                                 DropdownMenu(
-                                    expanded = expanded, onDismissRequest = {
+                                    expanded = expanded,
+                                    onDismissRequest = {
                                         expanded = false
-                                    }) {
-                                    DropdownMenuItem(text = {
-                                        Text("Stop")
-                                    }, onClick = {
-                                        expanded = !expanded
-                                    })
-                                    DropdownMenuItem(text = {
-                                        Text("About")
-                                    }, onClick = {
-                                        expanded = !expanded
-                                    })
+                                    },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("Settings")
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Settings,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            navController.navigate(
+                                                route = MainActivity.Settings
+                                            ) {
+                                                popUpTo(
+                                                    id = navController.graph.findStartDestination().id
+                                                ) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }.also {
+                                                expanded = !expanded
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("About")
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Info,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            expanded = !expanded
+                                        },
+                                    )
                                 }
                             }
                         },
@@ -2029,8 +2045,6 @@ class MainActivity : AppCompatActivity() {
                     contentAlignment = Alignment.Center
                 ) {
 
-                    
-
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize()
@@ -2044,30 +2058,34 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    
-                    
+
                 }
             }
         }
 
         @Composable
         private fun SettingsDestination() {
-            val capsulePadding = rememberCapsulePadding()
+            val capsulePadding: PaddingValues = rememberCapsulePadding()
+            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+                rememberTopAppBarState()
+            )
             Scaffold(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(
+                        connection = scrollBehavior.nestedScrollConnection
+                    ),
                 topBar = {
                     TopAppBar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = capsulePadding),
+                        modifier = Modifier.fillMaxWidth(),
                         title = {
                             Text("Settings")
                         },
                         actions = {
-
+                            // .padding(paddingValues = capsulePadding)
                         },
                         colors = TopAppBarDefaults.topAppBarColors(),
-                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+                        scrollBehavior = scrollBehavior
                     )
                 },
             ) { innerPadding ->
@@ -2078,11 +2096,19 @@ class MainActivity : AppCompatActivity() {
                     contentAlignment = Alignment.Center
                 ) {
 
+
                 }
             }
         }
     }
 
+    /**
+     ***********************************************************************************************
+     *
+     * 私有函数
+     *
+     ***********************************************************************************************
+     */
 
     private fun ViewGroup.generatorSdkPointByPosition(): List<Point> {
         sdkBannerPointList.clear()

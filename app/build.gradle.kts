@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -29,6 +31,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -57,6 +60,9 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+
+    implementation("com.google.android.gms:play-services-base:18.7.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
 
 
