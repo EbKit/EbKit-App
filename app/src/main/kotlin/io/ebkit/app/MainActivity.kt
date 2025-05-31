@@ -23,11 +23,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -224,28 +224,12 @@ class MainActivity : AppCompatActivity() {
     /* 是否显示调试信息 **/
     private val show: Boolean = BuildConfig.DEBUG
 
-    private val mMenuButton: ImageButton by lazy {
-        ImageButton(this@MainActivity).apply {
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setImageResource(R.drawable.baseline_more_horiz_24)
-            setOnClickListener {
-//                Toast.makeText(context, "menu", Toast.LENGTH_SHORT).show()
-//                openDialog()
-
-
-            }
-        }
+    private val mMenuButton: AppCompatImageButton by lazy {
+        AppCompatImageButton(this@MainActivity)
     }
-    private val mCloseButton: ImageButton by lazy {
-        ImageButton(this@MainActivity).apply {
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setImageResource(R.drawable.baseline_close_24)
-            setOnClickListener {
-//                Toast.makeText(context, "close", Toast.LENGTH_SHORT).show()
 
-
-            }
-        }
+    private val mCloseButton: AppCompatImageButton by lazy {
+        AppCompatImageButton(this@MainActivity)
     }
 
 
@@ -307,19 +291,21 @@ class MainActivity : AppCompatActivity() {
         false
     }
 
-    private val mFillMaxSize: FrameLayout.LayoutParams by lazy {
+    private val mFillMaxSize: ViewGroup.LayoutParams by lazy {
         FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT,
         )
     }
 
-    private val mFillMinSize: FrameLayout.LayoutParams by lazy {
+    private val mFillMinSize: ViewGroup.LayoutParams by lazy {
         FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT,
         )
     }
+
+
 
 //
 //    private interface IA {
@@ -577,7 +563,7 @@ class MainActivity : AppCompatActivity() {
 
         @Composable
         @UiComposable
-        fun Content()
+        fun EbKitContent()
     }
 
     private interface IColors {
@@ -595,14 +581,14 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private interface SdkView {
-        fun getView(): View
+    private interface IViewFactory {
+        val getContentView: View
+        val getOverlayView: View
+        val getMenuButton: View
+        val getCloseButton: View
     }
 
-    private abstract class SdkViewFactory {
-
-        abstract fun create(): SdkView
-    }
+    private interface IBackPressHandler
 
     /**
      * 布局预览注解
@@ -880,6 +866,14 @@ class MainActivity : AppCompatActivity() {
     )
 
     /**
+     ***********************************************************************************************
+     *
+     * 路由地址
+     *
+     ***********************************************************************************************
+     */
+
+    /**
      * 路由地址
      *
      * @param label 导航栏标题
@@ -908,6 +902,17 @@ class MainActivity : AppCompatActivity() {
      */
     @Serializable
     data object Settings
+
+    private val mViewFactory: IViewFactory = object : IViewFactory {
+        override val getContentView: View get() = mHybridCompose
+        override val getOverlayView: View get() = mComposeOverlay
+        override val getMenuButton: View get() = mMenuButton
+        override val getCloseButton: View get() = mCloseButton
+    }
+
+    private val mBackPressHandler: IBackPressHandler = object : IBackPressHandler {
+
+    }
 
     /**
      ***********************************************************************************************
@@ -1308,7 +1313,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 服务相当于整个服务类部分无法在大类中实现的方法在此实现并调用 */
-    private val mServiceDelegate: EcosedPlugin = object : EcosedPlugin(), DelegateWrapper {
+    private val mServiceDelegate: EcosedPlugin = object : EcosedPlugin(), DelegateWrapper, IViewFactory by mViewFactory {
 
         /** 插件标题 */
         override val title: String
@@ -1484,11 +1489,8 @@ class MainActivity : AppCompatActivity() {
             enableEdgeToEdge()
 
 
-            val f: SdkView = mViewFactory.create()
-            val overlay = f.getView()
-
-            setContentView(mHybridCompose, mFillMaxSize)
-            addContentView(overlay, mFillMaxSize)
+            setContentView(getContentView, mFillMaxSize)
+            addContentView(getOverlayView, mFillMaxSize)
 
 
             // 初始化
@@ -1557,13 +1559,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val mViewFactory: SdkViewFactory = object : SdkViewFactory() {
-        override fun create(): SdkView = mSdkView
-    }
 
-    private val mSdkView: SdkView = object : SdkView {
-        override fun getView(): View = mComposeOverlay
-    }
+
+
 
     /**
      ***********************************************************************************************
@@ -1578,30 +1576,37 @@ class MainActivity : AppCompatActivity() {
     private val mHybridCompose: View by lazy {
         return@lazy object : AbstractComposeView(
             context = this@MainActivity,
-        ) {
+        ), IContent by mContent {
 
+            /**
+             * 初始化
+             */
             init {
+                // 必须加此代码否则不符合预期
                 consumeWindowInsets = false
             }
 
+            /**
+             * 布局
+             */
             @Composable
             override fun Content() {
-                ContentScope {
-                    Content()
-                }
+                EbKitContent()
             }
 
+            /**
+             * 无障碍
+             */
             override fun getAccessibilityClassName(): CharSequence {
                 return this@MainActivity.toString()
             }
         }
     }
 
-
     private val mComposeOverlay: View by lazy {
         return@lazy object : FrameLayout(
             this@MainActivity,
-        ) {
+        ), IBackPressHandler by mBackPressHandler, IViewFactory by mViewFactory {
 
             /**
              * 初始化
@@ -1626,11 +1631,39 @@ class MainActivity : AppCompatActivity() {
                 // 初始请求插入计算
                 ViewCompat.requestApplyInsets(this)
                 // 添加菜单按钮
-                addView(mMenuButton, mFillMinSize)
+                addView(getMenuButton, mFillMinSize)
                 // 添加关闭按钮
-                addView(mCloseButton, mFillMinSize)
+                addView(getCloseButton, mFillMinSize)
                 // 启用内容绘制
                 setWillNotDraw(false)
+            }
+
+            override fun onViewAdded(child: View?) {
+                super.onViewAdded(child)
+                child?.let { childView ->
+                    when (childView) {
+                        mMenuButton -> (childView as AppCompatImageButton).apply {
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            setImageResource(R.drawable.baseline_more_horiz_24)
+                            setOnClickListener {
+                                Toast.makeText(this@MainActivity, "mMenuButton", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
+
+                        mCloseButton -> (childView as AppCompatImageButton).apply {
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            setImageResource(R.drawable.baseline_close_24)
+                            setOnClickListener {
+                                Toast.makeText(
+                                    this@MainActivity, "mCloseButton", Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        else -> error(message = "unknown instance")
+                    }
+                }
             }
 
             /**
@@ -1653,7 +1686,17 @@ class MainActivity : AppCompatActivity() {
                     // 起始位置偏移量，用于放置第一个按钮
                     var leftOffset = 0
                     // 遍历子视图
-                    for (index in 0 until childCount) {
+                    for (index in 0 until childCount.let { count ->
+                        val childList: ArrayList<View> = arrayListOf<View>(
+                            mMenuButton,
+                            mCloseButton,
+                        )
+                        return@let if (count <= childList.size) {
+                            count
+                        } else error(
+                            message = "childCount > 2",
+                        )
+                    }) {
                         when (index) {
                             // 仅布局前两个子视图
                             0, 1 -> {
@@ -1785,18 +1828,18 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private val mTheme: ITheme = object : ITheme {
+    private val mTheme: ITheme = object : ITheme, IColors by mColors, ITypography by mTypography {
 
         private val darkColorScheme = darkColorScheme(
-            primary = mColors.purple80,
-            secondary = mColors.purpleGrey80,
-            tertiary = mColors.pink80,
+            primary = purple80,
+            secondary = purpleGrey80,
+            tertiary = pink80,
         )
 
         private val lightColorScheme = lightColorScheme(
-            primary = mColors.purple40,
-            secondary = mColors.purpleGrey40,
-            tertiary = mColors.pink40,
+            primary = purple40,
+            secondary = purpleGrey40,
+            tertiary = pink40,
         )
 
         /**
@@ -1824,24 +1867,24 @@ class MainActivity : AppCompatActivity() {
 
             MaterialTheme(
                 colorScheme = colorScheme,
-                typography = mTypography.typography,
+                typography = typography,
                 content = content,
             )
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    private val mContent: IContent = object : IContent {
+
+
+    @OptIn(ExperimentalMaterial3Api::class) // Material3
+    private val mContent: IContent = object : IContent, ITheme by mTheme {
 
         /**
          * 布局
          */
         @Composable
-        override fun Content() {
-            ThemeScope {
-                EbKitTheme {
-                    ActivityMain()
-                }
+        override fun EbKitContent() {
+            EbKitTheme {
+                ActivityMain()
             }
         }
 
@@ -1853,10 +1896,7 @@ class MainActivity : AppCompatActivity() {
             return PaddingValues(
                 end = if (!LocalInspectionMode.current) {
                     with(receiver = LocalDensity.current) {
-                        val width: Dp = capsuleWidth.toDp()
-                        val padding: Dp = capsuleRightPadding.toDp()
-                        val safe: Dp = mComposeOverlay.paddingRight.toDp()
-                        return@with width + padding + safe
+                        return@with getActionPadding.toDp()
                     }
                 } else 0.dp,
             )
@@ -1896,40 +1936,45 @@ class MainActivity : AppCompatActivity() {
             NavigationSuiteScaffold(
                 navigationSuiteItems = {
                     appDestination.forEach { destination ->
-                        item(icon = {
-                            Icon(
-                                imageVector = if (currentDestination?.hierarchy?.any {
-                                        return@any it.hasRoute(
-                                            route = destination.route::class
-                                        )
-                                    } == true) {
-                                    destination.selectedIcon
-                                } else {
-                                    destination.icon
-                                },
-                                contentDescription = destination.label,
-                            )
-                        }, modifier = Modifier, enabled = true, label = {
-                            Text(text = destination.label)
-                        }, selected = currentDestination?.hierarchy?.any {
+                        val isCurrent: Boolean = currentDestination?.hierarchy?.any {
                             return@any it.hasRoute(
                                 route = destination.route::class
                             )
-                        } == true, onClick = {
-                            navController.navigate(
-                                route = destination.route,
-                            ) {
-                                popUpTo(
-                                    id = navController.graph.findStartDestination().id,
+                        } == true
+                        item(
+                            icon = {
+                                Icon(
+                                    imageVector = if (isCurrent) {
+                                        destination.selectedIcon
+                                    } else {
+                                        destination.icon
+                                    },
+                                    contentDescription = destination.label,
+                                )
+                            },
+                            modifier = Modifier, enabled = true,
+                            label = {
+                                Text(text = destination.label)
+                            },
+                            selected = isCurrent,
+                            onClick = {
+                                navController.navigate(
+                                    route = destination.route,
                                 ) {
-                                    saveState = true
+                                    popUpTo(
+                                        id = navController.graph.findStartDestination().id,
+                                    ) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }, alwaysShowLabel = false, badge = {
-                            Badge()
-                        })
+                            },
+                            alwaysShowLabel = false,
+                            badge = {
+                                Badge()
+                            },
+                        )
                     }
                 },
                 layoutType = customNavSuiteType,
@@ -2306,6 +2351,9 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private val IContent.getActionPadding: Int
+        get() = capsuleWidth + capsuleRightPadding + mComposeOverlay.paddingRight
+
 
     /**
      * 调用方法
@@ -2623,20 +2671,26 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    /**
+     * 覆写函数空间
+     *
+     * 用于 [MainActivity] 生命周期函数通过桥接单元启动引擎
+     *
+     * @param parent 调用父类super函数, 带有 [T] 类型 Implicit Receiver, 返回值 [R]
+     * @param scope 调用桥接调用单元函数返回 [S] , 带有 [T] 类型 Implicit Receiver, [R] 类型参数, 返回值 [S]
+     * @param block 生命周期函数体, 带有 [S] 类型 Implicit Receiver, [T] 和 [R] 类型参数, 返回值 [R]
+     * @return [R] 返回值
+     */
     private fun <T, S, R> T.overrideScope(
-        parent: T.() -> R, // this 为 T, it 为 无, return 为 R
-        scope: T.(R) -> S, // this 为 T, it 为 R , return 为 S
-        block: S.(T, R) -> R, // this 为 S, it 为 R， return 为 R
+        parent: T.() -> R,
+        scope: T.(R) -> S,
+        block: S.(T, R) -> R,
     ): R {
         val superResult: R = parent(this@overrideScope)
         val scopeResult: S = scope(this@overrideScope, superResult)
         return block.invoke(scopeResult, this@overrideScope, superResult)
     }
 
-    @Composable
-    private fun MainActivity.ContentScope(
-        block: @Composable IContent.() -> Unit,
-    ) = block.invoke(mContent)
 
     /**
      * 框架调用单元
@@ -2801,18 +2855,22 @@ class MainActivity : AppCompatActivity() {
         ),
     )
 
+    /**
+     * Compose布局调用单元
+     *
+     * [Preview] 预览函数调用布局
+     *
+     * @param block 布局代理单元
+     * @return content 返回值
+     */
     @Composable
-    private fun MainActivity.ThemeScope(
-        block: @Composable ITheme.() -> Unit,
-    ) = block.invoke(mTheme)
+    private fun MainActivity.ContentScope(
+        block: @Composable IContent.() -> Unit,
+    ) = block.invoke(mContent)
 
-    private val Float.toDp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            this@toDp,
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
+    /**
+     * 转换为DP
+     */
     private val Int.toDp: Int
         get() = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -2820,17 +2878,27 @@ class MainActivity : AppCompatActivity() {
             Resources.getSystem().displayMetrics,
         ).toInt()
 
-    private val Float.toSp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_SP,
-            this@toSp,
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
+    /**
+     * 转换为SP
+     */
     private val Int.toSp: Int
         get() = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP,
             this@toSp.toFloat(),
+            Resources.getSystem().displayMetrics,
+        ).toInt()
+
+    private val Float.toDp: Int
+        get() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            this,
+            Resources.getSystem().displayMetrics,
+        ).toInt()
+
+    private val Float.toSp: Int
+        get() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            this,
             Resources.getSystem().displayMetrics,
         ).toInt()
 
@@ -2853,7 +2921,7 @@ class MainActivity : AppCompatActivity() {
     @SharpPreview
     private fun Preview() {
         ContentScope {
-            Content()
+            EbKitContent()
         }
     }
 
