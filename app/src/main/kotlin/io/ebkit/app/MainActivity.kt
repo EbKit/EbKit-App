@@ -86,7 +86,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -304,7 +303,6 @@ class MainActivity : AppCompatActivity() {
             FrameLayout.LayoutParams.WRAP_CONTENT,
         )
     }
-
 
 
 //
@@ -586,6 +584,9 @@ class MainActivity : AppCompatActivity() {
         val getOverlayView: View
         val getMenuButton: View
         val getCloseButton: View
+
+        val getFillMaxSize: ViewGroup.LayoutParams
+        val getFillMinSize: ViewGroup.LayoutParams
     }
 
     private interface IBackPressHandler
@@ -904,10 +905,18 @@ class MainActivity : AppCompatActivity() {
     data object Settings
 
     private val mViewFactory: IViewFactory = object : IViewFactory {
-        override val getContentView: View get() = mHybridCompose
-        override val getOverlayView: View get() = mComposeOverlay
-        override val getMenuButton: View get() = mMenuButton
-        override val getCloseButton: View get() = mCloseButton
+        override val getContentView: View
+            get() = mHybridCompose
+        override val getOverlayView: View
+            get() = mComposeOverlay
+        override val getMenuButton: View
+            get() = mMenuButton
+        override val getCloseButton: View
+            get() = mCloseButton
+        override val getFillMaxSize: ViewGroup.LayoutParams
+            get() = mFillMaxSize
+        override val getFillMinSize: ViewGroup.LayoutParams
+            get() = mFillMinSize
     }
 
     private val mBackPressHandler: IBackPressHandler = object : IBackPressHandler {
@@ -993,10 +1002,15 @@ class MainActivity : AppCompatActivity() {
             return@engineScope this@engineScope.onDestroyEngine()
         }
 
-        override fun FlutterPluginProxy.onMethodCall(call: MethodCallProxy, result: ResultProxy) =
-            engineScope {
-                return@engineScope this@engineScope.onMethodCall(call = call, result = result)
-            }
+        override fun FlutterPluginProxy.onMethodCall(
+            call: MethodCallProxy,
+            result: ResultProxy,
+        ) = engineScope {
+            return@engineScope this@engineScope.onMethodCall(
+                call = call,
+                result = result,
+            )
+        }
     }
 
 
@@ -1313,23 +1327,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 服务相当于整个服务类部分无法在大类中实现的方法在此实现并调用 */
-    private val mServiceDelegate: EcosedPlugin = object : EcosedPlugin(), DelegateWrapper, IViewFactory by mViewFactory {
+    private val mServiceDelegate: EcosedPlugin =
+        object : EcosedPlugin(), DelegateWrapper, IViewFactory by mViewFactory {
 
-        /** 插件标题 */
-        override val title: String
-            get() = "ServiceDelegate"
+            /** 插件标题 */
+            override val title: String
+                get() = "ServiceDelegate"
 
-        /** 插件通道 */
-        override val channel: String
-            get() = EcosedChannel.DELEGATE_CHANNEL_NAME
+            /** 插件通道 */
+            override val channel: String
+                get() = EcosedChannel.DELEGATE_CHANNEL_NAME
 
-        /** 插件作者 */
-        override val author: String
-            get() = EcosedResources.DEFAULT_AUTHOR
+            /** 插件作者 */
+            override val author: String
+                get() = EcosedResources.DEFAULT_AUTHOR
 
-        /** 插件描述 */
-        override val description: String
-            get() = "服务功能代理, 无实际插件方法实现."
+            /** 插件描述 */
+            override val description: String
+                get() = "服务功能代理, 无实际插件方法实现."
 
 //        override fun attachBaseContext(base: Context?): Unit = base?.run {
 //            super.attachBaseContext(base)
@@ -1351,8 +1366,8 @@ class MainActivity : AppCompatActivity() {
 //            )
 //        }
 
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            when (name?.className) {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                when (name?.className) {
 //                UserService().javaClass.name -> {
 //                    if (service.isNotNull and (service?.pingBinder() == true)) {
 //                        this@FeOSdk.mIUserService =
@@ -1397,14 +1412,14 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                }
 
-                else -> {
+                    else -> {
 
+                    }
                 }
             }
-        }
 
-        override fun onServiceDisconnected(name: ComponentName?) {
-            when (name?.className) {
+            override fun onServiceDisconnected(name: ComponentName?) {
+                when (name?.className) {
 //                UserService().javaClass.name -> {
 //
 //                }
@@ -1421,16 +1436,16 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                }
 
-                else -> {
+                    else -> {
 
+                    }
                 }
+
             }
 
-        }
-
-        override fun onBindingDied(name: ComponentName?) {
-            super.onBindingDied(name)
-            when (name?.className) {
+            override fun onBindingDied(name: ComponentName?) {
+                super.onBindingDied(name)
+                when (name?.className) {
 //                UserService().javaClass.name -> {
 //
 //                }
@@ -1439,15 +1454,15 @@ class MainActivity : AppCompatActivity() {
 //
 //                }
 
-                else -> {
+                    else -> {
 
+                    }
                 }
             }
-        }
 
-        override fun onNullBinding(name: ComponentName?) {
-            super.onNullBinding(name)
-            when (name?.className) {
+            override fun onNullBinding(name: ComponentName?) {
+                super.onNullBinding(name)
+                when (name?.className) {
 //                UserService().javaClass.name -> {
 //
 //                }
@@ -1458,11 +1473,11 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                }
 
-                else -> {
+                    else -> {
 
+                    }
                 }
             }
-        }
 
 //        override fun onBinderReceived() {
 //            Toast.makeText(this, "onBinderReceived", Toast.LENGTH_SHORT).show()
@@ -1477,90 +1492,87 @@ class MainActivity : AppCompatActivity() {
 //        }
 
 
-        override val lifecycle: Lifecycle
-            get() = mLifecycle ?: error(message = "lifecycle is null!")
+            override val lifecycle: Lifecycle
+                get() = mLifecycle ?: error(message = "lifecycle is null!")
 
-        /**
-         * 活动创建时执行
-         */
-        override fun onCreate(owner: LifecycleOwner): Unit = activityScope {
-            super.onCreate(owner)
+            /**
+             * 活动创建时执行
+             */
+            override fun onCreate(owner: LifecycleOwner): Unit = activityScope {
+                super.onCreate(owner)
 
-            enableEdgeToEdge()
-
-
-            setContentView(getContentView, mFillMaxSize)
-            addContentView(getOverlayView, mFillMaxSize)
+                enableEdgeToEdge()
 
 
-            // 初始化
-            init {
+                setContentView(getContentView, getFillMaxSize)
+                addContentView(getOverlayView, getFillMaxSize)
+
+
+                // 初始化
+                init {
 //                delegateScope {
 //                    // 调用Delegate onCreate函数
 //                    onCreate(Bundle())
 //                }
-            }
-            // 切换工具栏状态
-            //toggle()
+                }
+                // 切换工具栏状态
+                //toggle()
 
 //            // 执行Delegate函数
 //            if (this@activityScope.isNotAppCompat) delegateScope {
 //                onPostCreate(Bundle())
 //            }
-        }
+            }
 
-        /**
-         * 活动启动时执行
-         */
-        override fun onStart(owner: LifecycleOwner): Unit = activityScope {
-            super.onStart(owner)
+            /**
+             * 活动启动时执行
+             */
+            override fun onStart(owner: LifecycleOwner): Unit = activityScope {
+                super.onStart(owner)
 //            // 执行Delegate onStart函数
 //            if (this@activityScope.isNotAppCompat) delegateScope {
 //                onStart()
 //            }
-        }
+            }
 
-        /**
-         * 活动恢复时执行
-         */
-        override fun onResume(owner: LifecycleOwner): Unit = activityScope {
-            super.onResume(owner)
+            /**
+             * 活动恢复时执行
+             */
+            override fun onResume(owner: LifecycleOwner): Unit = activityScope {
+                super.onResume(owner)
 //            // 执行Delegate onPostResume函数
 //            if (this@activityScope.isNotAppCompat) delegateScope {
 //                onPostResume()
 //            }
-        }
+            }
 
-        /**
-         * 活动暂停时执行
-         */
-        override fun onPause(owner: LifecycleOwner): Unit = activityScope {
-            super.onPause(owner)
-        }
+            /**
+             * 活动暂停时执行
+             */
+            override fun onPause(owner: LifecycleOwner): Unit = activityScope {
+                super.onPause(owner)
+            }
 
-        /**
-         * 活动停止时执行
-         */
-        override fun onStop(owner: LifecycleOwner): Unit = activityScope {
-            super.onStop(owner)
+            /**
+             * 活动停止时执行
+             */
+            override fun onStop(owner: LifecycleOwner): Unit = activityScope {
+                super.onStop(owner)
 //            if (this@activityScope.isNotAppCompat) delegateScope {
 //                onStop()
 //            }
-        }
+            }
 
-        /**
-         * 活动销毁时执行
-         */
-        override fun onDestroy(owner: LifecycleOwner): Unit = activityScope {
-            super.onDestroy(owner)
+            /**
+             * 活动销毁时执行
+             */
+            override fun onDestroy(owner: LifecycleOwner): Unit = activityScope {
+                super.onDestroy(owner)
 //            if (this@activityScope.isNotAppCompat) delegateScope {
 //                onDestroy()
 //            }
+            }
         }
-    }
-
-
-
 
 
     /**
@@ -1631,9 +1643,9 @@ class MainActivity : AppCompatActivity() {
                 // 初始请求插入计算
                 ViewCompat.requestApplyInsets(this)
                 // 添加菜单按钮
-                addView(getMenuButton, mFillMinSize)
+                addView(getMenuButton, getFillMinSize)
                 // 添加关闭按钮
-                addView(getCloseButton, mFillMinSize)
+                addView(getCloseButton, getFillMinSize)
                 // 启用内容绘制
                 setWillNotDraw(false)
             }
@@ -1872,7 +1884,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
-
 
 
     @OptIn(ExperimentalMaterial3Api::class) // Material3
