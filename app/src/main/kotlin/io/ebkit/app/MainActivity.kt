@@ -75,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.AbstractComposeView
@@ -223,13 +224,7 @@ class MainActivity : AppCompatActivity() {
     /* 是否显示调试信息 **/
     private val show: Boolean = BuildConfig.DEBUG
 
-    private val mMenuButton: AppCompatImageButton by lazy {
-        AppCompatImageButton(this@MainActivity)
-    }
 
-    private val mCloseButton: AppCompatImageButton by lazy {
-        AppCompatImageButton(this@MainActivity)
-    }
 
 
     /** 插件绑定器. */
@@ -1654,8 +1649,8 @@ class MainActivity : AppCompatActivity() {
                 super.onViewAdded(child)
                 child?.let { childView ->
                     when (childView) {
-                        mMenuButton -> (childView as AppCompatImageButton).apply {
-                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        getMenuButton -> (childView as AppCompatImageButton).apply {
+                            setBackgroundColor(Color.Transparent.toArgb())
                             setImageResource(R.drawable.baseline_more_horiz_24)
                             setOnClickListener {
                                 Toast.makeText(this@MainActivity, "mMenuButton", Toast.LENGTH_SHORT)
@@ -1663,8 +1658,8 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        mCloseButton -> (childView as AppCompatImageButton).apply {
-                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        getCloseButton -> (childView as AppCompatImageButton).apply {
+                            setBackgroundColor(Color.Transparent.toArgb())
                             setImageResource(R.drawable.baseline_close_24)
                             setOnClickListener {
                                 Toast.makeText(
@@ -1699,10 +1694,12 @@ class MainActivity : AppCompatActivity() {
                     var leftOffset = 0
                     // 遍历子视图
                     for (index in 0 until childCount.let { count ->
+                        // 子View列表
                         val childList: ArrayList<View> = arrayListOf<View>(
-                            mMenuButton,
-                            mCloseButton,
+                            getMenuButton,
+                            getCloseButton,
                         )
+                        // 返回子View数量
                         return@let if (count <= childList.size) {
                             count
                         } else error(
@@ -1805,6 +1802,25 @@ class MainActivity : AppCompatActivity() {
              */
             override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
                 return false
+            }
+        }
+    }
+
+    private val mMenuButton: View by lazy {
+        return@lazy object : AppCompatImageButton(this@MainActivity) {
+
+            init {
+
+            }
+        }
+    }
+
+    private val mCloseButton: View by lazy {
+        return@lazy object : AppCompatImageButton(this@MainActivity) {
+
+
+            init {
+
             }
         }
     }
