@@ -1496,6 +1496,7 @@ class MainActivity : AppCompatActivity() {
             override fun onCreate(owner: LifecycleOwner): Unit = activityScope {
                 super.onCreate(owner)
 
+                // 启用全面屏沉浸
                 enableEdgeToEdge()
 
 
