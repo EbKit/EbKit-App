@@ -73,6 +73,8 @@ dependencies {
     implementation(libs.shizuku.provider)
     implementation(libs.hiddenapibypass)
 
+    implementation("com.github.kongzue:BaseFramework:7.0.7")
+
 
 
 

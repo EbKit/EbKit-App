@@ -26,7 +26,6 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -109,13 +108,17 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.PermissionUtils
+import com.kongzue.baseframework.BaseActivity
+import com.kongzue.baseframework.interfaces.LifeCircleListener
+import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
 import kotlinx.serialization.Serializable
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     /** 实时更新的安全区值 */
     private var currentSafeInsets = Insets.NONE
@@ -225,8 +228,6 @@ class MainActivity : AppCompatActivity() {
     private val show: Boolean = BuildConfig.DEBUG
 
 
-
-
     /** 插件绑定器. */
     private var mBinding: PluginBinding? = null
 
@@ -276,14 +277,15 @@ class MainActivity : AppCompatActivity() {
         hide()
     }
 
-    private val delayHideTouchListener = View.OnTouchListener { view, motionEvent ->
-        when (motionEvent.action) {
-            MotionEvent.ACTION_DOWN -> if (AUTO_HIDE) delayedHide()
-            MotionEvent.ACTION_UP -> view.performClick()
-            else -> {}
+    private val delayHideTouchListener: View.OnTouchListener =
+        View.OnTouchListener { view, motionEvent ->
+            when (motionEvent.action) {
+                MotionEvent.ACTION_DOWN -> if (AUTO_HIDE) delayedHide()
+                MotionEvent.ACTION_UP -> view.performClick()
+                else -> {}
+            }
+            false
         }
-        false
-    }
 
     private val mFillMaxSize: ViewGroup.LayoutParams by lazy {
         FrameLayout.LayoutParams(
@@ -319,27 +321,58 @@ class MainActivity : AppCompatActivity() {
 //    }
 
 
-    override fun onCreate(savedInstanceState: Bundle?) = overrideScope(
-        parent = { super.onCreate(savedInstanceState) },
-        scope = { bridgeScope { this } },
-    ) { activity, result ->
-        return@overrideScope with(activity) {
-            onCreateEngine(this@with)
-            onCreateActivity(this@with)
-            onCreateLifecycle(this@with.lifecycle)
-            return@with result
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("L")
         }
     }
 
-    override fun onDestroy() = overrideScope(
-        parent = { super.onDestroy() },
-        scope = { bridgeScope { this } },
-    ) { activity, result ->
-        return@overrideScope with(activity) {
-            onDestroyLifecycle()
-            onDestroyActivity()
-            onDestroyEngine()
-            return@with result
+
+    override fun resetContentView(): View = mContentFrame
+
+    override fun initViews() {
+        setLifeCircleListener(mLifecycleDelegate)
+    }
+
+    override fun initDatas(parameter: JumpParameter?) {
+
+    }
+
+    override fun setEvents() {
+
+    }
+
+    private val mLifecycleDelegate: LifeCircleListener = object : LifeCircleListener() {
+
+        /**
+         * OnCreate
+         */
+        override fun onCreate() = overrideScope(
+            parent = {},
+            receiver = { myselfScope { this } },
+            scope = { bridgeScope { this } },
+            throws = { error(it) },
+        ) { receiver, result ->
+            return@overrideScope with(receiver) {
+                onCreate(activity = this@with)
+                return@with result
+            }
+        }
+
+        /**
+         * OnDestroy
+         */
+        override fun onDestroy() = overrideScope(
+            parent = {},
+            receiver = { myselfScope { this } },
+            scope = { bridgeScope { this } },
+            throws = { error(it) },
+        ) { receiver, result ->
+            return@overrideScope with(receiver) {
+                onDestroy()
+                return@with result
+            }
         }
     }
 
@@ -348,35 +381,17 @@ class MainActivity : AppCompatActivity() {
      */
     private interface FlutterPluginProxy {
 
-        /** 注册Activity引用 */
-        fun FlutterPluginProxy.onCreateActivity(activity: Activity)
+        /** 创建 */
+        fun FlutterPluginProxy.onCreate(activity: Activity)
 
-        /** 注销Activity引用 */
-        fun FlutterPluginProxy.onDestroyActivity()
-
-        /** 注册生命周期监听器 */
-        fun FlutterPluginProxy.onCreateLifecycle(lifecycle: Lifecycle)
-
-        /** 注销生命周期监听器释放资源避免内存泄露 */
-        fun FlutterPluginProxy.onDestroyLifecycle()
+        /** 销毁 */
+        fun FlutterPluginProxy.onDestroy()
 
         fun FlutterPluginProxy.onActivityResult(
             requestCode: Int,
             resultCode: Int,
             data: Intent?,
         ): Boolean
-
-        fun FlutterPluginProxy.onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray,
-        ): Boolean
-
-        /** 引擎初始化 */
-        fun FlutterPluginProxy.onCreateEngine(context: Context)
-
-        /** 引擎销毁 */
-        fun FlutterPluginProxy.onDestroyEngine()
 
         /** 方法调用 */
         fun FlutterPluginProxy.onMethodCall(
@@ -584,7 +599,9 @@ class MainActivity : AppCompatActivity() {
         val getFillMinSize: ViewGroup.LayoutParams
     }
 
-    private interface IBackPressHandler
+    private interface IBackPressHandler {
+
+    }
 
     /**
      * 布局预览注解
@@ -945,24 +962,12 @@ class MainActivity : AppCompatActivity() {
         override val description: String
             get() = "FlutterEngine与EcosedEngine通信的的桥梁"
 
-        override fun FlutterPluginProxy.onCreateActivity(activity: Activity) = engineScope {
-            return@engineScope this@engineScope.onCreateActivity(
-                activity = activity,
-            )
+        override fun FlutterPluginProxy.onCreate(activity: Activity) = engineScope {
+            return@engineScope this@engineScope.onCreate(activity = activity)
         }
 
-        override fun FlutterPluginProxy.onDestroyActivity() = engineScope {
-            return@engineScope this@engineScope.onDestroyActivity()
-        }
-
-        override fun FlutterPluginProxy.onCreateLifecycle(lifecycle: Lifecycle) = engineScope {
-            return@engineScope this@engineScope.onCreateLifecycle(
-                lifecycle = lifecycle,
-            )
-        }
-
-        override fun FlutterPluginProxy.onDestroyLifecycle() = engineScope {
-            return@engineScope this@engineScope.onDestroyLifecycle()
+        override fun FlutterPluginProxy.onDestroy() = engineScope {
+            return@engineScope this@engineScope.onDestroy()
         }
 
         override fun FlutterPluginProxy.onActivityResult(
@@ -975,26 +980,6 @@ class MainActivity : AppCompatActivity() {
                 resultCode = resultCode,
                 data = data,
             )
-        }
-
-        override fun FlutterPluginProxy.onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray,
-        ): Boolean = engineScope {
-            return@engineScope this@engineScope.onRequestPermissionsResult(
-                requestCode = requestCode,
-                permissions = permissions,
-                grantResults = grantResults,
-            )
-        }
-
-        override fun FlutterPluginProxy.onCreateEngine(context: Context) = engineScope {
-            return@engineScope this@engineScope.onCreateEngine(context = context)
-        }
-
-        override fun FlutterPluginProxy.onDestroyEngine() = engineScope {
-            return@engineScope this@engineScope.onDestroyEngine()
         }
 
         override fun FlutterPluginProxy.onMethodCall(
@@ -1028,85 +1013,11 @@ class MainActivity : AppCompatActivity() {
         override val description: String
             get() = "Ecosed Engine"
 
-        override fun FlutterPluginProxy.onCreateActivity(activity: Activity) {
-            mActivity = activity
-        }
-
-        override fun FlutterPluginProxy.onDestroyActivity() {
-            mActivity = null
-        }
-
-        override fun FlutterPluginProxy.onCreateLifecycle(lifecycle: Lifecycle) = lifecycleScope {
-            mLifecycle = lifecycle
-            this@lifecycleScope.lifecycle.addObserver(
-                observer = this@lifecycleScope,
-            )
-        }
-
-        override fun FlutterPluginProxy.onDestroyLifecycle(): Unit = lifecycleScope {
-            this@lifecycleScope.lifecycle.removeObserver(this@lifecycleScope)
-            mLifecycle = null
-        }
-
-        override fun FlutterPluginProxy.onActivityResult(
-            requestCode: Int,
-            resultCode: Int,
-            data: Intent?,
-        ): Boolean {
-
-            return true
-        }
-
-        override fun FlutterPluginProxy.onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray,
-        ): Boolean {
-
-            return true
-        }
-
-        /**
-         * 引擎初始化时执行
-         */
-        override fun onEcosedAdded(binding: PluginBinding): Unit = run {
-            super.onEcosedAdded(binding)
-            // 设置来自插件的全局调试布尔值
-            mFullDebug = this@run.isDebug
-        }
-
-        override fun onEcosedMethodCall(call: EcosedMethodCall, result: EcosedResult) {
-            super.onEcosedMethodCall(call, result)
-            when (call.method) {
-                EcosedMethod.OPEN_DIALOG_METHOD -> result.success(
-                    result = execPluginMethod<Boolean>(
-                        channel = EcosedChannel.INVOKE_CHANNEL_NAME,
-                        method = EcosedMethod.OPEN_DIALOG_METHOD,
-                        bundle = Bundle()
-                    )
-                )
-
-                EcosedMethod.CLOSE_DIALOG_METHOD -> result.success(
-                    result = execPluginMethod<Boolean>(
-                        channel = EcosedChannel.INVOKE_CHANNEL_NAME,
-                        method = EcosedMethod.CLOSE_DIALOG_METHOD,
-                        bundle = Bundle()
-                    )
-                )
-
-                else -> result.notImplemented()
-            }
-        }
-
-        /**
-         * 引擎初始化.
-         * @param context 上下文 - 此上下文来自FlutterPlugin的ApplicationContext
-         */
-        override fun FlutterPluginProxy.onCreateEngine(context: Context) {
+        override fun FlutterPluginProxy.onCreate(activity: Activity) {
             when {
                 mPluginList.isNull or mBinding.isNull -> pluginScope(
                     debug = mBaseDebug,
-                    context = context,
+                    context = activity,
                 ) { plugins, binding ->
                     // 初始化插件列表.
                     mPluginList = arrayListOf()
@@ -1142,12 +1053,25 @@ class MainActivity : AppCompatActivity() {
                     TAG, "请勿重复执行onCreateEngine!"
                 ) else Unit
             }
+            mActivity = activity
+            if (activity is LifecycleOwner) {
+                (activity as LifecycleOwner).apply {
+                    mLifecycle = lifecycle
+                }
+            }
+            lifecycleScope {
+                this@lifecycleScope.lifecycle.addObserver(
+                    observer = this@lifecycleScope,
+                )
+            }
         }
 
-        /**
-         * 销毁引擎释放资源.
-         */
-        override fun FlutterPluginProxy.onDestroyEngine() {
+        override fun FlutterPluginProxy.onDestroy() {
+            lifecycleScope {
+                this@lifecycleScope.lifecycle.removeObserver(this@lifecycleScope)
+            }
+            mLifecycle = null
+            mActivity = null
             when {
                 mPluginList.isNotNull or mBinding.isNotNull -> {
                     // 清空插件列表
@@ -1158,6 +1082,47 @@ class MainActivity : AppCompatActivity() {
                     TAG,
                     "请勿重复执行onDestroyEngine!",
                 ) else Unit
+            }
+        }
+
+        override fun FlutterPluginProxy.onActivityResult(
+            requestCode: Int,
+            resultCode: Int,
+            data: Intent?,
+        ): Boolean {
+
+            return true
+        }
+
+        /**
+         * 引擎初始化时执行
+         */
+        override fun onEcosedAdded(binding: PluginBinding): Unit = run {
+            super.onEcosedAdded(binding)
+            // 设置来自插件的全局调试布尔值
+            mFullDebug = this@run.isDebug
+        }
+
+        override fun onEcosedMethodCall(call: EcosedMethodCall, result: EcosedResult) {
+            super.onEcosedMethodCall(call, result)
+            when (call.method) {
+                EcosedMethod.OPEN_DIALOG_METHOD -> result.success(
+                    result = execPluginMethod<Boolean>(
+                        channel = EcosedChannel.INVOKE_CHANNEL_NAME,
+                        method = EcosedMethod.OPEN_DIALOG_METHOD,
+                        bundle = Bundle()
+                    )
+                )
+
+                EcosedMethod.CLOSE_DIALOG_METHOD -> result.success(
+                    result = execPluginMethod<Boolean>(
+                        channel = EcosedChannel.INVOKE_CHANNEL_NAME,
+                        method = EcosedMethod.CLOSE_DIALOG_METHOD,
+                        bundle = Bundle()
+                    )
+                )
+
+                else -> result.notImplemented()
             }
         }
 
@@ -1500,24 +1465,13 @@ class MainActivity : AppCompatActivity() {
                 enableEdgeToEdge()
 
 
-                setContentView(getContentView, getFillMaxSize)
-                addContentView(getOverlayView, getFillMaxSize)
-
-
-                // 初始化
-                init {
-//                delegateScope {
-//                    // 调用Delegate onCreate函数
-//                    onCreate(Bundle())
-//                }
+                (mContentFrame as ViewGroup).apply {
+                    setOnTouchListener(delayHideTouchListener)
+                    addView(getContentView, getFillMaxSize)
+                    addView(getOverlayView, getFillMaxSize)
                 }
-                // 切换工具栏状态
-                //toggle()
-
-//            // 执行Delegate函数
-//            if (this@activityScope.isNotAppCompat) delegateScope {
-//                onPostCreate(Bundle())
-//            }
+//                setContentView(getContentView, getFillMaxSize)
+//                addContentView(getOverlayView, getFillMaxSize)
             }
 
             /**
@@ -1579,6 +1533,12 @@ class MainActivity : AppCompatActivity() {
      *
      ***********************************************************************************************
      */
+
+    private val mContentFrame: View by lazy {
+        return@lazy object : FrameLayout(me) {
+
+        }
+    }
 
     /** Compose Hybrid  */
     private val mHybridCompose: View by lazy {
@@ -2574,7 +2534,7 @@ class MainActivity : AppCompatActivity() {
 //
 //        }
         // 设置根视图触摸事件
-        findRootView().setOnTouchListener(delayHideTouchListener)
+
     }
 
     /**
@@ -2622,8 +2582,8 @@ class MainActivity : AppCompatActivity() {
     /**
      * 获取根视图
      */
-    private fun MainActivity.findRootView(): View = activityScope {
-        return@activityScope this@findRootView.window.decorView
+    private fun findRootView(): View = activityScope {
+        return@activityScope this.window.decorView
     }
 
     /**
@@ -2709,15 +2669,35 @@ class MainActivity : AppCompatActivity() {
      * @param block 生命周期函数体, 带有 [S] 类型 Implicit Receiver, [T] 和 [R] 类型参数, 返回值 [R]
      * @return [R] 返回值
      */
-    private fun <T, S, R> T.overrideScope(
-        parent: T.() -> R,
-        scope: T.(R) -> S,
-        block: S.(T, R) -> R,
-    ): R {
-        val superResult: R = parent(this@overrideScope)
-        val scopeResult: S = scope(this@overrideScope, superResult)
-        return block.invoke(scopeResult, this@overrideScope, superResult)
+    private fun <Current, Receiver, Scope, Result> Current.overrideScope(
+        parent: Current.() -> Result,
+        receiver: Current.(Result) -> Receiver,
+        scope: Receiver.(Result) -> Scope,
+        throws: Current.(Any) -> Nothing,
+        block: Scope.(Receiver, Result) -> Result,
+    ): Result {
+        try {
+            val parentResult: Result = parent(this@overrideScope)
+            val receiverResult: Receiver = receiver(parentResult)
+            val scopeResult: Scope = scope(receiverResult, parentResult)
+            return block.invoke(scopeResult, receiverResult, parentResult)
+        } catch (exception: Exception) {
+            throws(exception)
+        }
     }
+
+    private fun <R> myselfScope(
+        block: Activity.() -> R,
+    ): R = block.invoke(
+        me.run {
+            return@run when (this@run) {
+                is Activity -> this@run
+                else -> error(
+                    message = "??? me is not activity ???",
+                )
+            }
+        },
+    )
 
 
     /**
@@ -2726,7 +2706,7 @@ class MainActivity : AppCompatActivity() {
      * @param block Flutter插件代理单元
      * @return content 返回值
      */
-    private fun <R> MainActivity.bridgeScope(
+    private fun <R> bridgeScope(
         block: FlutterPluginProxy.() -> R,
     ): R = block.invoke(
         mEngineBridge.run {
