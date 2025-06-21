@@ -1,6 +1,7 @@
 name: ebkit_app
 description: "EbKit App"
-version: 1.0.0+1
+version: 1.0.0
+publish_to: none
 resolution: workspace
 environment:
   sdk: ^3.8.1
@@ -16,4 +17,4 @@ flutter:
   uses-material-design: true
   module:
     androidX: true
-    androidPackage: io.ebkit.app
+    androidPackage: io.ebkit.flutter
