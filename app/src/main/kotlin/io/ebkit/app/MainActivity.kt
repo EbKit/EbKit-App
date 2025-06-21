@@ -1656,7 +1656,7 @@ class MainActivity : BaseActivity() {
                     // 遍历子视图
                     for (index in 0 until childCount.let { count ->
                         // 子View列表
-                        val childList: ArrayList<View> = arrayListOf<View>(
+                        val childList: ArrayList<View> = arrayListOf(
                             getMenuButton,
                             getCloseButton,
                         )
