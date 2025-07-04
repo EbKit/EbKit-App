@@ -3,9 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.kotlin.ksp)
+//    alias(libs.plugins.kotlin.parcelize)
+//    alias(libs.plugins.kotlin.kapt)
+//    alias(libs.plugins.kotlin.ksp)
 }
 
 kotlin {
@@ -61,13 +61,13 @@ kotlin {
     }
 }
 
-ksp {
+//ksp {
+//
+//}
 
-}
-
-dependencies {
-
-}
+//dependencies {
+//
+//}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
