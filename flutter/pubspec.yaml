@@ -10,9 +10,10 @@ dependencies:
     sdk: flutter
   flutter_boost:
     git:
-        url: 'https://github.com/alibaba/flutter_boost.git'
-        ref: '5.0.2'
+        url: 'https://github.com/wyq0918dev/flutter_boost.git'
+        ref: 'dev/exp'
   cupertino_icons: ^1.0.8
+  battery_plus: ^6.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
