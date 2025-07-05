@@ -106,8 +106,8 @@ packages:
     dependency: transitive
     description:
       path: "."
-      ref: "dev/exp"
-      resolved-ref: a9f7977fa501909c9d9411dd4d6e47a918d133a6
+      ref: f3228638f68df7fd1caea3ffe733736e7cd7a365
+      resolved-ref: f3228638f68df7fd1caea3ffe733736e7cd7a365
       url: "https://github.com/wyq0918dev/flutter_boost.git"
     source: git
     version: "5.0.2"
