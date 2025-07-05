@@ -28,18 +28,64 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.appcompat.widget.Toolbar
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.DecayAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDecay
+import androidx.compose.animation.core.exponentialDecay
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
@@ -48,6 +94,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,28 +113,49 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.graphics.toColorInt
@@ -105,6 +173,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowWidthSizeClass
+import coil.compose.rememberImagePainter
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.PermissionUtils
@@ -113,8 +182,12 @@ import com.kongzue.baseframework.interfaces.LifeCircleListener
 import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.math.sqrt
 
 class MainActivity : BaseActivity() {
@@ -869,6 +942,70 @@ class MainActivity : BaseActivity() {
         val y: Float,
     )
 
+    data class MiniProgramItem(
+        /**
+         * 名称
+         */
+        val title: String,
+        /**
+         * 图标
+         */
+        val icon: String,
+    )
+
+    enum class AppItemStyle {
+        Image, Icon,
+    }
+
+    private val miniProgramList: ArrayList<MiniProgramItem> = arrayListOf<MiniProgramItem>(
+        MiniProgramItem(
+            title = "饿了么",
+            icon = "https://img0.baidu.com/it/u=2625005847,2716895016&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "美图",
+            icon = "https://img1.baidu.com/it/u=1752963805,4078506746&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "滴滴",
+            icon = "https://img0.baidu.com/it/u=1068101613,1323308017&fm=253&fmt=auto&app=138&f=PNG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "青橘单车",
+            icon = "https://img0.baidu.com/it/u=195120191,2939897897&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
+        ),
+        MiniProgramItem(
+            title = "斗地主",
+            icon = "https://img2.baidu.com/it/u=926635057,1451495262&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
+        ),
+        MiniProgramItem(
+            title = "羊城通",
+            icon = "https://img2.baidu.com/it/u=2751300851,4181594410&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "美图秀秀",
+            icon = "https://img1.baidu.com/it/u=417359459,147216874&fm=253&fmt=auto&app=138&f=PNG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "拼多多",
+            icon = "https://img2.baidu.com/it/u=620052409,134315960&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
+        ),
+    )
+
+    private val mineMiniProgramList: ArrayList<MiniProgramItem> = arrayListOf<MiniProgramItem>(
+        MiniProgramItem(
+            title = "羊城通",
+            icon = "https://img2.baidu.com/it/u=2751300851,4181594410&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
+        ),
+        MiniProgramItem(
+            title = "青桔单车",
+            icon = "https://img0.baidu.com/it/u=195120191,2939897897&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
+        ),
+    )
+
+    private val mOutBoundSpringStiff = 150f
+    private val mOutBoundSpringDamp = 0.86f
+
     /**
      ***********************************************************************************************
      *
@@ -1459,7 +1596,7 @@ class MainActivity : BaseActivity() {
                 (mContentFrame as ViewGroup).apply {
                     setOnTouchListener(delayHideTouchListener)
                     addView(getContentView, getFillMaxSize)
-                    addView(getOverlayView, getFillMaxSize)
+//                    addView(getOverlayView, getFillMaxSize)
                 }
 //                setContentView(getContentView, getFillMaxSize)
 //                addContentView(getOverlayView, getFillMaxSize)
@@ -1855,7 +1992,7 @@ class MainActivity : BaseActivity() {
 
 
     @OptIn(ExperimentalMaterial3Api::class) // Material3
-    private val mContent: IContent = object : IContent, ITheme by mTheme {
+    private val mContent: IContent = object : IContent, ITheme by mTheme, IViewFactory by mViewFactory {
 
         /**
          * 布局
@@ -1886,14 +2023,14 @@ class MainActivity : BaseActivity() {
          */
         @Composable
         private fun ActivityMain() {
-            val appDestination = listOf(
-                AppDestination<MainActivity.Home>(
+            val appDestination = arrayListOf(
+                AppDestination(
                     label = "Home",
                     route = MainActivity.Home,
                     icon = Icons.Outlined.Home,
                     selectedIcon = Icons.Filled.Home,
                 ),
-                AppDestination<MainActivity.Settings>(
+                AppDestination(
                     label = "Settings",
                     route = MainActivity.Settings,
                     icon = Icons.Outlined.Settings,
@@ -1912,62 +2049,64 @@ class MainActivity : BaseActivity() {
                     else -> NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo)
                 }
             }
-            NavigationSuiteScaffold(
-                navigationSuiteItems = {
-                    appDestination.forEach { destination ->
-                        val isCurrent: Boolean = currentDestination?.hierarchy?.any {
-                            return@any it.hasRoute(
-                                route = destination.route::class
-                            )
-                        } == true
-                        item(
-                            icon = {
-                                Icon(
-                                    imageVector = if (isCurrent) {
-                                        destination.selectedIcon
-                                    } else {
-                                        destination.icon
-                                    },
-                                    contentDescription = destination.label,
+            MiniProgramLayer {
+                NavigationSuiteScaffold(
+                    navigationSuiteItems = {
+                        appDestination.forEach { destination ->
+                            val isCurrent: Boolean = currentDestination?.hierarchy?.any {
+                                return@any it.hasRoute(
+                                    route = destination.route::class
                                 )
-                            },
-                            modifier = Modifier, enabled = true,
-                            label = {
-                                Text(text = destination.label)
-                            },
-                            selected = isCurrent,
-                            onClick = {
-                                navController.navigate(
-                                    route = destination.route,
-                                ) {
-                                    popUpTo(
-                                        id = navController.graph.findStartDestination().id,
+                            } == true
+                            item(
+                                icon = {
+                                    Icon(
+                                        imageVector = if (isCurrent) {
+                                            destination.selectedIcon
+                                        } else {
+                                            destination.icon
+                                        },
+                                        contentDescription = destination.label,
+                                    )
+                                },
+                                modifier = Modifier, enabled = true,
+                                label = {
+                                    Text(text = destination.label)
+                                },
+                                selected = isCurrent,
+                                onClick = {
+                                    navController.navigate(
+                                        route = destination.route,
                                     ) {
-                                        saveState = true
+                                        popUpTo(
+                                            id = navController.graph.findStartDestination().id,
+                                        ) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            alwaysShowLabel = false,
-                            badge = {
-                                Badge()
-                            },
-                        )
-                    }
-                },
-                layoutType = customNavSuiteType,
-            ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = MainActivity.Home,
-                    modifier = Modifier.fillMaxSize(),
+                                },
+                                alwaysShowLabel = false,
+                                badge = {
+                                    Badge()
+                                },
+                            )
+                        }
+                    },
+                    layoutType = customNavSuiteType,
                 ) {
-                    composable<MainActivity.Home> {
-                        HomeDestination(navController = navController)
-                    }
-                    composable<MainActivity.Settings> {
-                        SettingsDestination()
+                    NavHost(
+                        navController = navController,
+                        startDestination = MainActivity.Home,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        composable<MainActivity.Home> {
+                            HomeDestination(navController = navController)
+                        }
+                        composable<MainActivity.Settings> {
+                            SettingsDestination()
+                        }
                     }
                 }
             }
@@ -1975,7 +2114,7 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun HomeDestination(navController: NavController) {
-            val capsulePadding: PaddingValues = rememberCapsulePadding()
+//            val capsulePadding: PaddingValues = rememberCapsulePadding()
             val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
                 rememberTopAppBarState()
             )
@@ -1998,9 +2137,9 @@ class MainActivity : BaseActivity() {
                         },
                         actions = {
                             IconButton(
-                                modifier = Modifier.padding(
-                                    paddingValues = capsulePadding,
-                                ),
+//                                modifier = Modifier.padding(
+//                                    paddingValues = capsulePadding,
+//                                ),
                                 onClick = {
                                     expanded = !expanded
                                 },
@@ -2089,7 +2228,7 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun SettingsDestination() {
-            val capsulePadding: PaddingValues = rememberCapsulePadding()
+//            val capsulePadding: PaddingValues = rememberCapsulePadding()
             val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
                 rememberTopAppBarState()
             )
@@ -2124,6 +2263,1080 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
+
+
+        @Composable
+        fun MPOverlay(
+            modifier: Modifier = Modifier,
+            content: @Composable BoxScope.() -> Unit,
+        ) {
+            val inspection: Boolean = LocalInspectionMode.current
+            Box(
+                modifier = modifier.fillMaxSize(),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    content = content
+                )
+                if (!inspection) AndroidView(
+                    factory = { getOverlayView },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        @Composable
+        private fun MiniProgramLayer(content: @Composable BoxScope.() -> Unit) {
+            var offset by remember { mutableFloatStateOf(value = 0f) }
+            var visible by remember { mutableStateOf(value = false) }
+            var scrollPercent by remember { mutableFloatStateOf(value = 0f) } // 滚动的百分比
+            var ballSize by remember { mutableFloatStateOf(value = 0f) } // 中间圆的大小
+            val target = with(receiver = LocalContext.current) {
+                resources.displayMetrics.heightPixels / 5 * 2
+            } // 出现小程序页面的滚动高度
+            var offsetX by remember { mutableFloatStateOf(value = 0f) } // 左右两个小圆点的X轴偏移量
+            Box(modifier = Modifier.fillMaxSize()) {
+                MPOverlay {
+                    MPScreen(
+                        modifier = Modifier.alpha(alpha = scrollPercent),
+                        popBackStack = {
+                            visible = false
+                            scrollPercent = 0f
+                        },
+                    ) // 小程序界面
+                }
+                MPMask(
+                    modifier = Modifier.fillMaxSize(),
+                    percent = scrollPercent,
+                ) // 遮罩
+                MPHost(
+                    modifier = Modifier.fillMaxSize(),
+                    visible = !visible,
+                    percent = scrollPercent,
+                    scrollOffset = { x3 ->
+                        offset = x3
+                        if (offset > target) {
+                            visible = true
+                            scrollPercent = 1.0f
+                        } else if (!visible) {
+                            scrollPercent = offset / target
+                        }
+                        scrollPercent = if (scrollPercent < 0f) 0.0f else scrollPercent
+                        ballSize = scrollPercent * 70
+                        offsetX = scrollPercent * 100
+                    },
+                    content = content,
+                ) // 应用内容
+                MPAnimate(
+                    percent = scrollPercent,
+                    offset = offset,
+                    x = offsetX,
+                    ball = ballSize,
+                ) // 三点动画
+            }
+        }
+
+        @Composable
+        private fun MPHost(
+            modifier: Modifier = Modifier,
+            visible: Boolean,
+            percent: Float,
+            scrollOffset: (offset: Float) -> Unit,
+            content: @Composable BoxScope.() -> Unit,
+        ) {
+            val scrollState = rememberLazyListState()
+            val fullHeight: Int = with(receiver = LocalContext.current) {
+                resources.displayMetrics.heightPixels
+            }
+            val springStiff by remember { mutableFloatStateOf(value = Spring.StiffnessLow) }
+            val springDamp by remember { mutableFloatStateOf(value = Spring.DampingRatioLowBouncy) }
+            val dragP by remember { mutableFloatStateOf(value = 50f) }
+            AnimatedVisibility(
+                modifier = modifier,
+                visible = visible,
+                enter = slideInVertically(initialOffsetY = { fullHeight }),
+                exit = slideOutVertically(targetOffsetY = { fullHeight }),
+            ) {
+                LazyColumn(
+                    state = scrollState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .overScrollVertical(
+                            isStartScroll = true,
+                            isEndScroll = false,
+                            nestedScrollToParent = false,
+                            scrollEasing = { x1, x2 ->
+                                parabolaScrollEasing(
+                                    currentOffset = x1, newOffset = x2, p = dragP
+                                )
+                            },
+                            springStiff = springStiff,
+                            springDamp = springDamp,
+                            scrollOffset = scrollOffset,
+                        ),
+                    flingBehavior = rememberOverscrollFlingBehavior {
+                        scrollState
+                    },
+                    content = {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .fillParentMaxSize()
+                                    .alpha(alpha = 1 - percent), content = content
+                            )
+                        }
+                    },
+                )
+            }
+        }
+
+        /**
+         * 遮罩层
+         */
+        @Composable
+        private fun MPMask(modifier: Modifier = Modifier, percent: Float) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(
+                        color = if (percent < 0.9) {
+                            MaterialTheme.colorScheme.background
+                        } else {
+                            Color.Transparent
+                        }
+                    ),
+            )
+        }
+
+        @Composable
+        private fun MPAnimate(
+            modifier: Modifier = Modifier, percent: Float, offset: Float, x: Float, ball: Float
+        ) {
+            val density = LocalDensity.current.density
+            /** 三个点的动画*/
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp)
+                    .statusBarsPadding()
+                    .height(height = (offset.toInt() / density).dp)
+                    .alpha(alpha = 1 - percent),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(
+                            size = when {
+                                percent < 0.15f -> ball.dp
+                                percent > 0.15f && percent <= 0.3f -> 10.dp
+                                percent > 0.15f && percent <= 0.5f -> {
+                                    // 线性映射公式: b = startB + (a - startA) * (endB - startB) / (endA - startA)
+                                    val startA = 0.3f
+                                    val endA = 0.5f
+                                    val startB = 10.0f
+                                    val endB = 6.0f
+                                    require(value = percent in startA..endA) { "a must be between 0.3 and 0.5" }
+                                    (startB + (percent - startA) * (endB - startB) / (endA - startA)).dp
+                                }
+
+                                percent > 0.15f && percent > 0.5f -> 6.dp
+                                else -> ball.dp
+                            })
+                        .clip(
+                            shape = RoundedCornerShape(
+                                size = 6.dp,
+                            ),
+                        )
+                        .background(
+                            color = Color(
+                                color = 0xff303030,
+                            ),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                x = if (percent > 0.15f) {
+                                    -x.roundToInt()
+                                } else {
+                                    0
+                                },
+                                y = 0,
+                            )
+                        }
+                        .size(
+                            size = 6.dp,
+                        )
+                        .clip(
+                            shape = RoundedCornerShape(
+                                size = 4.dp,
+                            ),
+                        )
+                        .background(
+                            color = Color(
+                                color = 0xff303030,
+                            ),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                x = if (percent > 0.15f) {
+                                    x.roundToInt()
+                                } else {
+                                    0
+                                },
+                                y = 0,
+                            )
+                        }
+                        .size(
+                            size = 6.dp,
+                        )
+                        .clip(
+                            shape = RoundedCornerShape(
+                                size = 4.dp,
+                            ),
+                        )
+                        .background(
+                            color = Color(
+                                color = 0xff303030,
+                            ),
+                        ),
+                )
+            }
+        }
+
+
+        @Composable
+        private fun MPScreen(
+            modifier: Modifier = Modifier, popBackStack: () -> Unit
+        ) {
+            val scrollState = rememberLazyListState()
+            val springStiff by remember { mutableFloatStateOf(value = Spring.StiffnessLow) }
+            val springDamp by remember { mutableFloatStateOf(value = Spring.DampingRatioLowBouncy) }
+            val dragP by remember { mutableFloatStateOf(value = 50f) }
+            val target = with(LocalContext.current) {
+                resources.displayMetrics.heightPixels / 4
+            }
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(color = Color(color = 0xff1B1B2B)),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Column {
+                    MPTopBar()
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 0.5.dp,
+                        color = Color(color = 0xFF19142E)
+                    )
+                    LazyColumn(
+                        state = scrollState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .overScrollVertical(
+                                isStartScroll = false,
+                                isEndScroll = true,
+                                nestedScrollToParent = false,
+                                scrollEasing = { x1, x2 ->
+                                    parabolaScrollEasing(
+                                        currentOffset = x1,
+                                        newOffset = x2,
+                                        p = dragP,
+                                    )
+                                },
+                                springStiff = springStiff,
+                                springDamp = springDamp,
+                                scrollOffset = { offset ->
+                                    if (offset < -target) {
+                                        popBackStack()
+                                    }
+                                },
+                            ),
+                    ) {
+                        item {
+                            Box(
+                                modifier = Modifier.padding(
+                                    start = 30.dp,
+                                    bottom = 15.dp,
+                                    top = 30.dp,
+                                ),
+                            ) {
+                                Text(
+                                    text = "音乐和视频",
+                                    fontSize = 14.sp,
+                                    color = Color(
+                                        color = 0xFF8E8E9E,
+                                    ),
+                                )
+                            }
+                        }
+                        item {
+                            MPPlayer()
+                        }
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(
+                                        start = 30.dp,
+                                        bottom = 15.dp,
+                                        top = 30.dp,
+                                        end = 30.dp,
+                                    ),
+                            ) {
+                                Row {
+                                    Box(
+                                        modifier = Modifier.weight(weight = 1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        Text(
+                                            text = "最近使用小程序",
+                                            fontSize = 14.sp,
+                                            color = Color(color = 0xff8E8E9E),
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(weight = 1f)
+                                            .wrapContentHeight(align = Alignment.CenterVertically),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "更多",
+                                                fontSize = 14.sp,
+                                                color = Color(color = 0xff8E8E9E),
+                                            )
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(size = 16.dp),
+                                                tint = Color(color = 0xff8E8E9E),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        item {
+                            AppsGrid(list = miniProgramList)
+                        }
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(start = 30.dp, bottom = 15.dp, top = 30.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Text(
+                                    text = "我的小程序",
+                                    fontSize = 14.sp,
+                                    color = Color(color = 0xff8E8E9E),
+                                )
+                            }
+                        }
+                        item {
+                            AppsGrid(list = mineMiniProgramList)
+                        }
+                        item {
+                            Spacer(
+                                modifier = Modifier
+                                    .navigationBarsPadding()
+                                    .height(height = 70.dp),
+                            )
+                        }
+                    }
+                }
+                MPBottomBar(
+                    popBackStack = {
+                        popBackStack()
+                    },
+                )
+            }
+        }
+
+        @Composable
+        private fun MPTopBar(modifier: Modifier = Modifier) {
+            val textState = remember {
+                mutableStateOf(
+                    value = TextFieldValue(),
+                )
+            }
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .height(height = 56.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "最近",
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Box(
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart
+                ) {
+                    BasicTextField(
+                        enabled = false,
+                        value = textState.value,
+                        onValueChange = { value ->
+                            textState.value = value
+                        },
+                        textStyle = TextStyle(
+                            fontSize = 16.sp
+                        ),
+                        modifier = Modifier
+                            .width(width = 85.dp)
+                            .height(height = 25.dp)
+                            .padding(start = 20.dp),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(shape = RoundedCornerShape(size = 20.dp))
+                                    .background(Color(color = 0xff434056))
+                                    .padding(start = 6.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(size = 20.dp),
+                                        tint = Color(color = 0xff8E8E9E)
+                                    )
+                                    Box(
+                                        modifier = Modifier.wrapContentSize(),
+                                        contentAlignment = Alignment.CenterStart,
+                                    ) {
+                                        Text(
+                                            text = "搜索",
+                                            fontSize = 13.sp,
+                                            color = Color(color = 0xff8E8E9E),
+                                            textAlign = TextAlign.Center,
+                                        )
+                                        innerTextField()
+                                    }
+                                }
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
+        @Composable
+        private fun MPBottomBar(
+            modifier: Modifier = Modifier,
+            popBackStack: () -> Unit,
+        ) {
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                    .background(Color(color = 0xff787493))
+                    .navigationBarsPadding()
+                    .unwaveClick(onClick = popBackStack),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height = 70.dp),
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(start = 16.dp),
+                            text = "小程序",
+                            maxLines = 1,
+                            fontSize = 16.sp,
+                            overflow = TextOverflow.Ellipsis,
+                            color = Color.White
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxSize()
+                                .padding(end = 15.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    /* doSomething() */
+                                }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(30.dp),
+                                    tint = Color.White
+                                )
+                            }
+                            IconButton(onClick = {
+                                /* doSomething() */
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AddCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(25.dp),
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        @Composable
+        private fun AppsGrid(modifier: Modifier = Modifier, list: ArrayList<MiniProgramItem>) {
+            LazyVerticalGrid(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(start = 15.dp, end = 15.dp)
+                    .height(height = 180.dp),
+                horizontalArrangement = Arrangement.spacedBy(space = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(space = 10.dp),
+                columns = GridCells.Fixed(count = 4),
+                userScrollEnabled = false,
+            ) {
+                items(items = list) { item ->
+                    Box {
+                        AppItem(
+                            style = AppItemStyle.Image,
+                            appIcon = rememberImagePainter(data = item.icon),
+                            appName = item.title,
+                        )
+                    }
+                }
+            }
+        }
+
+        @Composable
+        private fun AppItem(
+            modifier: Modifier = Modifier,
+            onLaunch: () -> Unit = {},
+            style: AppItemStyle,
+            appIcon: Painter,
+            appName: String,
+        ) {
+            Column(
+                modifier = modifier.wrapContentSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(size = 60.dp)
+                        .clip(shape = RoundedCornerShape(size = 35.dp))
+                        .background(color = Color(color = 0xff434056))
+                        .clickable(onClick = onLaunch),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = appIcon,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = when (style) {
+                            AppItemStyle.Image -> Modifier
+                                .fillMaxSize()
+                                .clip(
+                                    shape = RoundedCornerShape(
+                                        size = 35.dp,
+                                    ),
+                                )
+
+                            AppItemStyle.Icon -> Modifier.size(
+                                size = 30.dp,
+                            )
+                        }
+                    )
+                }
+                Text(
+                    text = appName,
+                    fontSize = 15.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        @Composable
+        private fun MPPlayer(modifier: Modifier = Modifier) {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp)
+                    .height(height = 90.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(weight = 1f),
+                ) {
+                    AppItem(
+                        modifier = Modifier
+                            .weight(weight = 1f)
+                            .fillMaxSize(),
+                        style = AppItemStyle.Icon,
+                        appIcon = painterResource(id = R.drawable.icon_music),
+                        appName = "音乐",
+                    )
+                    AppItem(
+                        modifier = Modifier
+                            .weight(weight = 1f)
+                            .fillMaxSize(),
+                        style = AppItemStyle.Icon,
+                        appIcon = painterResource(id = R.drawable.icon_audio),
+                        appName = "音频",
+                    )
+                }
+                RecentPlayer(
+                    modifier = Modifier
+                        .weight(weight = 1f)
+                        .fillMaxSize(),
+                )
+            }
+        }
+
+        @Composable
+        private fun RecentPlayer(modifier: Modifier = Modifier) {
+            val textState = remember { mutableStateOf(value = TextFieldValue()) }
+            Column(
+                modifier = modifier.wrapContentSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.height(height = 60.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(height = 60.dp)
+                            .padding(start = 10.dp),
+                        enabled = false,
+                        value = textState.value,
+                        onValueChange = {
+                            textState.value = it
+                        },
+                        textStyle = TextStyle(
+                            fontSize = 16.sp
+                        ),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(40.dp))
+                                    .background(Color(0xff434056))
+                                    .padding(start = 6.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(30.dp),
+                                        tint = Color(0xff8E8E9E)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .padding(start = 10.dp),
+                                        contentAlignment = Alignment.CenterStart,
+                                    ) {
+                                        Text(
+                                            text = "暂无内容",
+                                            fontSize = 16.sp,
+                                            color = Color(0xff8E8E9E),
+                                            textAlign = TextAlign.Center,
+                                        )
+                                        innerTextField()
+                                    }
+                                }
+                            }
+                        },
+                    )
+                }
+                Text(
+                    text = "最近播放",
+                    fontSize = 15.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+
+        /**
+         * 自定义去掉水波纹的点击拓展函数
+         */
+        private fun Modifier.unwaveClick(
+            onClick: () -> Unit
+        ): Modifier = composed {
+            clickable(
+                indication = null,
+                onClick = onClick,
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+            )
+        }
+
+        /**
+         * @see overScrollOutOfBound
+         */
+        private fun Modifier.overScrollVertical(
+            isStartScroll: Boolean = true,
+            isEndScroll: Boolean = false,
+            nestedScrollToParent: Boolean = true,
+            scrollEasing: ((currentOffset: Float, newOffset: Float) -> Float)? = null,
+            springStiff: Float = mOutBoundSpringStiff,
+            springDamp: Float = mOutBoundSpringDamp,
+            scrollOffset: (offset: Float) -> Unit,
+        ): Modifier = this@overScrollVertical.overScrollOutOfBound(
+            isStartScroll = isStartScroll,
+            isEndScroll = isEndScroll,
+            isVertical = true,
+            nestedScrollToParent = nestedScrollToParent,
+            scrollEasing = scrollEasing,
+            springStiff = springStiff,
+            springDamp = springDamp,
+            scrollOffset = scrollOffset
+        )
+
+        /**
+         * A parabolic rolling easing curve.
+         *
+         * When rolling in the same direction, the farther away from 0, the greater the "resistance"; the closer to 0, the smaller the "resistance";
+         *
+         * No drag effect is applied when the scrolling direction is opposite to the currently existing overscroll offset
+         *
+         * Note: when [p] = 50f, its performance should be consistent with iOS
+         * @param currentOffset Offset value currently out of bounds
+         * @param newOffset The offset of the new scroll
+         * @param p Key parameters for parabolic curve calculation
+         * @param density Without this param, the unit of offset is pixels,
+         * so we need this variable to have the same expectations on different devices.
+         */
+        @Stable
+        private fun parabolaScrollEasing(
+            currentOffset: Float,
+            newOffset: Float,
+            p: Float = 50f,
+            density: Float = 4f,
+        ): Float {
+            val realP = p * density
+            val ratio = (realP / (sqrt(
+                x = realP * abs(x = currentOffset + newOffset / 2).coerceAtLeast(
+                    minimumValue = Float.MIN_VALUE
+                )
+            ))).coerceIn(
+                minimumValue = Float.MIN_VALUE,
+                maximumValue = 1f,
+            )
+            return if (sign(x = currentOffset) == sign(x = newOffset)) {
+                currentOffset + newOffset * ratio
+            } else {
+                currentOffset + newOffset
+            }
+        }
+
+
+        /**
+         * OverScroll effect for scrollable Composable .
+         *
+         * - You should call it before Modifiers with similar semantics such as [Modifier.scrollable], so that nested scrolling can work normally
+         * - You should use it with [rememberOverscrollFlingBehavior]
+         * @param isEndScroll Is it allowed to have elastic effects at the end ?
+         * @param isVertical is vertical, or horizontal ?
+         * @param nestedScrollToParent Whether to dispatch nested scroll events to parent
+         * @param scrollEasing U can refer to [defaultParabolaScrollEasing], The incoming values are the currently existing overscroll Offset
+         * and the new offset from the gesture.
+         * modify it to cooperate with [springStiff] to customize the sliding damping effect.
+         * The current default easing comes from iOS, you don't need to modify it!
+         * @param springStiff springStiff for overscroll effect，For better user experience, the new value is not recommended to be higher than[Spring.StiffnessMediumLow]
+         * @param springDamp springDamp for overscroll effect，generally do not need to set
+         */
+        private fun Modifier.overScrollOutOfBound(
+            isStartScroll: Boolean = true,
+            isEndScroll: Boolean = false,
+            isVertical: Boolean = true,
+            nestedScrollToParent: Boolean = true,
+            scrollEasing: ((currentOffset: Float, newOffset: Float) -> Float)?,
+            springStiff: Float = mOutBoundSpringStiff,
+            springDamp: Float = mOutBoundSpringDamp,
+            scrollOffset: (offset: Float) -> Unit,
+        ): Modifier = composed {
+            val nestedScrollToParent by rememberUpdatedState(nestedScrollToParent)
+            val scrollEasing by rememberUpdatedState(
+                newValue = scrollEasing ?: defaultParabolaScrollEasing
+            )
+            val springStiff by rememberUpdatedState(springStiff)
+            val springDamp by rememberUpdatedState(springDamp)
+            val isVertical by rememberUpdatedState(isVertical)
+            val dispatcher = remember { NestedScrollDispatcher() }
+            var offset by remember { mutableFloatStateOf(0f) }
+
+            val nestedConnection = remember {
+                object : NestedScrollConnection {
+                    /**
+                     * If the offset is less than this value, we consider the animation to end.
+                     */
+                    val visibilityThreshold = 0.5f
+                    lateinit var lastFlingAnimator: Animatable<Float, AnimationVector1D>
+
+                    override fun onPreScroll(
+                        available: Offset, source: NestedScrollSource
+                    ): Offset {
+                        // Found fling behavior in the wrong direction.
+
+                        if (source != NestedScrollSource.UserInput) {
+                            return dispatcher.dispatchPreScroll(available, source)
+                        }
+                        if (::lastFlingAnimator.isInitialized && lastFlingAnimator.isRunning) {
+                            dispatcher.coroutineScope.launch {
+                                lastFlingAnimator.stop()
+                            }
+                        }
+                        val realAvailable = when {
+                            nestedScrollToParent -> available - dispatcher.dispatchPreScroll(
+                                available, source
+                            )
+
+                            else -> available
+                        }
+                        val realOffset = if (isVertical) realAvailable.y else realAvailable.x
+
+                        val isSameDirection = sign(realOffset) == sign(offset)
+                        if (abs(offset) <= visibilityThreshold || isSameDirection) {
+                            return available - realAvailable
+                        }
+                        val offsetAtLast = scrollEasing(offset, realOffset)
+                        // sign changed, coerce to start scrolling and exit
+                        return if (sign(offset) != sign(offsetAtLast)) {
+                            offset = 0f
+                            if (isVertical) {
+                                Offset(
+                                    x = available.x - realAvailable.x,
+                                    y = available.y - realAvailable.y + realOffset
+                                )
+                            } else {
+                                Offset(
+                                    x = available.x - realAvailable.x + realOffset,
+                                    y = available.y - realAvailable.y
+                                )
+                            }
+                        } else {
+                            offset = offsetAtLast
+                            if (isVertical) {
+                                Offset(x = available.x - realAvailable.x, y = available.y)
+                            } else {
+                                Offset(x = available.x, y = available.y - realAvailable.y)
+                            }
+                        }
+                    }
+
+                    override fun onPostScroll(
+                        consumed: Offset, available: Offset, source: NestedScrollSource
+                    ): Offset {
+                        // Found fling behavior in the wrong direction.
+                        if (source != NestedScrollSource.UserInput) {
+                            return dispatcher.dispatchPreScroll(available, source)
+                        }
+                        val realAvailable = when {
+                            nestedScrollToParent -> available - dispatcher.dispatchPostScroll(
+                                consumed, available, source
+                            )
+
+                            else -> available
+                        }
+                        offset = scrollEasing(
+                            offset, if (isVertical) realAvailable.y else realAvailable.x
+                        )
+                        return if (isVertical) {
+                            Offset(x = available.x - realAvailable.x, y = available.y)
+                        } else {
+                            Offset(x = available.x, y = available.y - realAvailable.y)
+                        }
+                    }
+
+                    override suspend fun onPreFling(available: Velocity): Velocity {
+                        if (::lastFlingAnimator.isInitialized && lastFlingAnimator.isRunning) {
+                            lastFlingAnimator.stop()
+                        }
+                        val parentConsumed = when {
+                            nestedScrollToParent -> dispatcher.dispatchPreFling(available)
+                            else -> Velocity.Zero
+                        }
+                        val realAvailable = available - parentConsumed
+                        var leftVelocity = if (isVertical) realAvailable.y else realAvailable.x
+
+                        if (abs(offset) >= visibilityThreshold && sign(leftVelocity) != sign(offset)) {
+                            lastFlingAnimator = Animatable(offset).apply {
+                                when {
+                                    leftVelocity < 0 -> updateBounds(lowerBound = 0f)
+                                    leftVelocity > 0 -> updateBounds(upperBound = 0f)
+                                }
+                            }
+                            leftVelocity = lastFlingAnimator.animateTo(
+                                0f,
+                                spring(springDamp, springStiff, visibilityThreshold),
+                                leftVelocity
+                            ) {
+                                offset = scrollEasing(offset, value - offset)
+                            }.endState.velocity
+                        }
+                        return if (isVertical) {
+                            Velocity(parentConsumed.x, y = available.y - leftVelocity)
+                        } else {
+                            Velocity(available.x - leftVelocity, y = parentConsumed.y)
+                        }
+                    }
+
+                    override suspend fun onPostFling(
+                        consumed: Velocity, available: Velocity
+                    ): Velocity {
+                        val realAvailable = when {
+                            nestedScrollToParent -> available - dispatcher.dispatchPostFling(
+                                consumed, available
+                            )
+
+                            else -> available
+                        }
+                        lastFlingAnimator = Animatable(offset)
+                        lastFlingAnimator.animateTo(
+                            0f,
+                            spring(springDamp, springStiff, visibilityThreshold),
+                            if (isVertical) realAvailable.y else realAvailable.x
+                        ) {
+                            offset = scrollEasing(offset, value - offset)
+                        }
+                        return if (isVertical) {
+                            Velocity(x = available.x - realAvailable.x, y = available.y)
+                        } else {
+                            Velocity(x = available.x, y = available.y - realAvailable.y)
+                        }
+                    }
+                }
+            }
+
+            scrollOffset(offset)
+            nestedScrollToParent
+
+            if (!isEndScroll && offset < 0f) {
+                offset = 0f
+            }
+            if (!isStartScroll && offset > 0f) {
+                offset = 0f
+            }
+
+            this
+                .clipToBounds()
+                .nestedScroll(
+                    connection = nestedConnection,
+                    dispatcher = dispatcher,
+                )
+                .graphicsLayer {
+                    if (isVertical) {
+                        translationY = offset
+                    } else {
+                        translationX = offset
+                    }
+                }
+        }
+
+        private val defaultParabolaScrollEasing: (currentOffset: Float, newOffset: Float) -> Float
+            @Composable get() {
+                val density = LocalDensity.current.density
+                return { currentOffset, newOffset ->
+                    parabolaScrollEasing(
+                        currentOffset = currentOffset,
+                        newOffset = newOffset,
+                        density = density,
+                    )
+                }
+            }
+
+
+        /**
+         * You should use it with [overScrollVertical]
+         * @param decaySpec You can use instead [rememberSplineBasedDecay]
+         * @param getScrollState Pass in your [ScrollableState], for [LazyColumn]/[LazyRow] , it's [LazyListState]
+         */
+        @Composable
+        private fun rememberOverscrollFlingBehavior(
+            decaySpec: DecayAnimationSpec<Float> = exponentialDecay(),
+            getScrollState: () -> ScrollableState,
+        ): FlingBehavior = remember(decaySpec, getScrollState) {
+            object : FlingBehavior {
+                /**
+                 * - We should check it every frame of fling
+                 * - Should stop fling when returning true and return the remaining speed immediately.
+                 * - Without this detection, scrollBy() will continue to consume velocity,
+                 * which will cause a velocity error in nestedScroll.
+                 */
+                private val Float.canNotBeConsumed: Boolean // this is Velocity
+                    get() {
+                        val state = getScrollState()
+                        return !(this < 0 && state.canScrollBackward || this > 0 && state.canScrollForward)
+                    }
+
+                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+                    if (initialVelocity.canNotBeConsumed) {
+                        return initialVelocity
+                    }
+                    return if (abs(initialVelocity) > 1f) {
+                        var velocityLeft = initialVelocity
+                        var lastValue = 0f
+                        AnimationState(
+                            initialValue = 0f,
+                            initialVelocity = initialVelocity,
+                        ).animateDecay(decaySpec) {
+                            val delta = value - lastValue
+                            val consumed = scrollBy(delta)
+                            lastValue = value
+                            velocityLeft = this.velocity
+                            // avoid rounding errors and stop if anything is unconsumed
+                            if (abs(delta - consumed) > 0.5f || velocityLeft.canNotBeConsumed) {
+                                cancelAnimation()
+                            }
+                        }
+                        velocityLeft
+                    } else {
+                        initialVelocity
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -2134,7 +3347,7 @@ class MainActivity : BaseActivity() {
      ***********************************************************************************************
      */
 
-    private fun ViewGroup.generatorSdkPointByPosition(): List<Point> {
+    private fun generatorSdkPointByPosition(): List<Point> {
         sdkBannerPointList.clear()
         sdkBannerPointList.add(
             Point(
@@ -2167,7 +3380,7 @@ class MainActivity : BaseActivity() {
     /**
      * 绘制横幅
      */
-    private fun ViewGroup.drawSdkBanner(canvas: Canvas, pointList: List<Point>) {
+    private fun drawSdkBanner(canvas: Canvas, pointList: List<Point>) {
         sdkBannerPath.apply {
             reset()
             pointList.withIndex().forEach {
@@ -2220,7 +3433,7 @@ class MainActivity : BaseActivity() {
     }
 
 
-    private fun ViewGroup.generatorDebugPointByPosition(): List<Point> {
+    private fun generatorDebugPointByPosition(): List<Point> {
         debugBannerPointList.clear()
         debugBannerPointList.add(
             element = Point(
@@ -2246,7 +3459,7 @@ class MainActivity : BaseActivity() {
         return debugBannerPointList
     }
 
-    private fun ViewGroup.drawDebugBanner(canvas: Canvas, pointList: List<Point>) {
+    private fun drawDebugBanner(canvas: Canvas, pointList: List<Point>) {
         debugBannerPath.apply {
             reset()
             pointList.withIndex().forEach {

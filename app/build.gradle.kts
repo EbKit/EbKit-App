@@ -49,20 +49,23 @@ kotlin {
     sourceSets {
         main {
             dependencies {
+                implementation(dependencyNotation = project(path = ":flutter"))
+                implementation(dependencyNotation = project(path = ":flutter_boost"))
+
                 implementation(dependencyNotation = libs.utilcodex)
                 implementation(dependencyNotation = libs.shizuku.api)
                 implementation(dependencyNotation = libs.shizuku.provider)
                 implementation(dependencyNotation = libs.hiddenapibypass)
                 implementation(dependencyNotation = libs.baseframework)
-
-                implementation(dependencyNotation = project(path = ":flutter"))
-                implementation(dependencyNotation = project(path = ":flutter_boost"))
             }
         }
     }
 }
 
 dependencies {
+    implementation("com.google.accompanist:accompanist-coil:0.15.0")
+
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
