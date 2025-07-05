@@ -114,7 +114,6 @@ import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
 import kotlinx.serialization.Serializable
-import org.lsposed.hiddenapibypass.HiddenApiBypass
 import kotlin.math.pow
 import kotlin.math.sqrt
 

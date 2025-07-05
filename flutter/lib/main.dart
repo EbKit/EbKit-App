@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final Battery _battery = Battery();
 
-    BatteryState? _batteryState;
+  BatteryState? _batteryState;
   StreamSubscription<BatteryState>? _batteryStateSubscription;
 
   void _incrementCounter() {
