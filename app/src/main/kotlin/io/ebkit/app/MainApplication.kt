@@ -1,16 +1,24 @@
 package io.ebkit.app
 
-import android.app.Application
 import android.content.Context
 import android.os.Build
+import com.facebook.react.PackageList
+import com.facebook.react.ReactApplication
+import com.facebook.react.ReactHost
+import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+import com.facebook.react.ReactNativeHost
+import com.facebook.react.ReactPackage
+import com.facebook.react.defaults.DefaultReactHost
+import com.facebook.react.defaults.DefaultReactNativeHost
 import com.idlefish.flutterboost.FlutterBoost
 import com.idlefish.flutterboost.FlutterBoostDelegate
 import com.idlefish.flutterboost.FlutterBoostRouteOptions
 import com.idlefish.flutterboost.containers.FlutterBoostActivity
+import com.kongzue.baseframework.BaseApp
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
-class MainApplication: Application(), FlutterBoostDelegate {
+class MainApplication: BaseApp<MainApplication>(), FlutterBoostDelegate, ReactApplication {
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
@@ -19,8 +27,20 @@ class MainApplication: Application(), FlutterBoostDelegate {
         }
     }
 
-    override fun onCreate() {
-        super.onCreate()
+    override val reactNativeHost: ReactNativeHost
+        get() = object : DefaultReactNativeHost(this) {
+            override fun getPackages(): List<ReactPackage> = PackageList(this).packages
+            override fun getJSMainModuleName(): String = "index"
+            override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
+            override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
+            override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
+        }
+
+    override val reactHost: ReactHost?
+        get() = DefaultReactHost.getDefaultReactHost(applicationContext, reactNativeHost)
+
+    override fun init() {
+        loadReactNative(this)
         FlutterBoost.instance().setup(this@MainApplication, this@MainApplication) {}
     }
 

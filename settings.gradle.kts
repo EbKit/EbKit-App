@@ -10,6 +10,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
@@ -20,6 +21,16 @@ dependencyResolutionManagement {
         maven(url = "https://storage.googleapis.com/download.flutter.io")
     }
 }
+plugins { id("com.facebook.react.settings") }
+extensions.configure<com.facebook.react.ReactSettingsExtension> {
+    autolinkLibrariesFromCommand(
+        workingDirectory = settings.layout.rootDirectory.dir("./react").asFile,
+        lockFiles = settings.layout.rootDirectory.dir("./react").files(
+            "yarn.lock", "package-lock.json", "package.json", "react-native.config.js"
+        )
+    )
+}
 rootProject.name = "EbKit"
 include(":app")
-apply(from = File("$settingsDir/flutter/.android/include_flutter.groovy"))
+apply(from = File("${rootProject.projectDir}/flutter/.android/include_flutter.groovy"))
+includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")

@@ -6,6 +6,7 @@ plugins {
 //    alias(libs.plugins.kotlin.parcelize)
 //    alias(libs.plugins.kotlin.kapt)
 //    alias(libs.plugins.kotlin.ksp)
+    id("com.facebook.react")
 }
 
 kotlin {
@@ -20,7 +21,7 @@ kotlin {
             versionName = "1.0"
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             ndk {
-                abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
             }
         }
         buildTypes {
@@ -34,12 +35,12 @@ kotlin {
         }
         compileOptions {
             isCoreLibraryDesugaringEnabled = true
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
         }
-        kotlinOptions {
-            jvmTarget = "11"
-        }
+//        kotlinOptions {
+//            jvmTarget = "17"
+//        }
         buildFeatures {
             aidl = true
             compose = true
@@ -57,9 +58,20 @@ kotlin {
                 implementation(dependencyNotation = libs.shizuku.provider)
                 implementation(dependencyNotation = libs.hiddenapibypass)
                 implementation(dependencyNotation = libs.baseframework)
+
+                implementation("com.facebook.react:react-android")
+                implementation("com.facebook.react:hermes-android")
             }
         }
     }
+}
+
+react {
+    root = file("${rootProject.projectDir}/react")
+    reactNativeDir = file("${rootProject.projectDir}/react/node_modules/react-native")
+    codegenDir = file("${rootProject.projectDir}/react/node_modules/@react-native/codegen")
+    cliFile = file("${rootProject.projectDir}/react/node_modules/react-native/cli.js")
+    autolinkLibrariesWithApp()
 }
 
 dependencies {

@@ -407,36 +407,32 @@ class MainActivity : BaseActivity() {
 
     }
 
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        (mContentFrame as ViewGroup).addView(view, params)
+    }
+
     private val mLifecycleDelegate: LifeCircleListener = object : LifeCircleListener() {
 
         /**
          * OnCreate
          */
-        override fun onCreate() = overrideScope(
-            parent = {},
+        override fun onCreate() = onScope(
             receiver = { myselfScope { this } },
             scope = { bridgeScope { this } },
             throws = { error(it) },
-        ) { receiver, result ->
-            return@overrideScope with(receiver) {
-                onCreate(activity = this@with)
-                return@with result
-            }
+        ) {
+            onCreate(activity = it)
         }
 
         /**
          * OnDestroy
          */
-        override fun onDestroy() = overrideScope(
-            parent = {},
+        override fun onDestroy() = onScope(
             receiver = { myselfScope { this } },
             scope = { bridgeScope { this } },
             throws = { error(it) },
-        ) { receiver, result ->
-            return@overrideScope with(receiver) {
-                onDestroy()
-                return@with result
-            }
+        ) {
+            onDestroy()
         }
     }
 
@@ -1592,14 +1588,8 @@ class MainActivity : BaseActivity() {
                 // 启用全面屏沉浸
                 enableEdgeToEdge()
 
-
-                (mContentFrame as ViewGroup).apply {
-                    setOnTouchListener(delayHideTouchListener)
-                    addView(getContentView, getFillMaxSize)
-//                    addView(getOverlayView, getFillMaxSize)
-                }
-//                setContentView(getContentView, getFillMaxSize)
-//                addContentView(getOverlayView, getFillMaxSize)
+                mContentFrame.setOnTouchListener(delayHideTouchListener)
+                setContentView(view = getContentView, params = getFillMaxSize)
             }
 
             /**
@@ -1607,10 +1597,7 @@ class MainActivity : BaseActivity() {
              */
             override fun onStart(owner: LifecycleOwner): Unit = activityScope {
                 super.onStart(owner)
-//            // 执行Delegate onStart函数
-//            if (this@activityScope.isNotAppCompat) delegateScope {
-//                onStart()
-//            }
+
             }
 
             /**
@@ -1618,10 +1605,7 @@ class MainActivity : BaseActivity() {
              */
             override fun onResume(owner: LifecycleOwner): Unit = activityScope {
                 super.onResume(owner)
-//            // 执行Delegate onPostResume函数
-//            if (this@activityScope.isNotAppCompat) delegateScope {
-//                onPostResume()
-//            }
+
             }
 
             /**
@@ -1636,9 +1620,7 @@ class MainActivity : BaseActivity() {
              */
             override fun onStop(owner: LifecycleOwner): Unit = activityScope {
                 super.onStop(owner)
-//            if (this@activityScope.isNotAppCompat) delegateScope {
-//                onStop()
-//            }
+
             }
 
             /**
@@ -1646,9 +1628,7 @@ class MainActivity : BaseActivity() {
              */
             override fun onDestroy(owner: LifecycleOwner): Unit = activityScope {
                 super.onDestroy(owner)
-//            if (this@activityScope.isNotAppCompat) delegateScope {
-//                onDestroy()
-//            }
+
             }
         }
 
@@ -1992,7 +1972,7 @@ class MainActivity : BaseActivity() {
 
 
     @OptIn(ExperimentalMaterial3Api::class) // Material3
-    private val mContent: IContent = object : IContent, ITheme by mTheme, IViewFactory by mViewFactory {
+    private val mContent: IContent = object : IContent, ITheme by mTheme {
 
         /**
          * 布局
@@ -2046,7 +2026,9 @@ class MainActivity : BaseActivity() {
                     WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
                     WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
                     WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
-                    else -> NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo)
+                    else -> NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(
+                        adaptiveInfo
+                    )
                 }
             }
             MiniProgramLayer {
@@ -2264,7 +2246,7 @@ class MainActivity : BaseActivity() {
 
 
         @Composable
-        fun MPOverlay(
+        private fun MPOverlay(
             modifier: Modifier = Modifier,
             content: @Composable BoxScope.() -> Unit,
         ) {
@@ -2273,11 +2255,10 @@ class MainActivity : BaseActivity() {
                 modifier = modifier.fillMaxSize(),
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    content = content
+                    modifier = Modifier.fillMaxSize(), content = content
                 )
                 if (!inspection) AndroidView(
-                    factory = { getOverlayView },
+                    factory = { mViewFactory.getOverlayView },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -2409,7 +2390,7 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun MPAnimate(
-            modifier: Modifier = Modifier, percent: Float, offset: Float, x: Float, ball: Float
+            modifier: Modifier = Modifier, percent: Float, offset: Float, x: Float, ball: Float,
         ) {
             val density = LocalDensity.current.density
             /** 三个点的动画*/
@@ -2426,21 +2407,21 @@ class MainActivity : BaseActivity() {
                     modifier = Modifier
                         .size(
                             size = when {
-                                percent < 0.15f -> ball.dp
-                                percent > 0.15f && percent <= 0.3f -> 10.dp
-                                percent > 0.15f && percent <= 0.5f -> {
-                                    // 线性映射公式: b = startB + (a - startA) * (endB - startB) / (endA - startA)
-                                    val startA = 0.3f
-                                    val endA = 0.5f
-                                    val startB = 10.0f
-                                    val endB = 6.0f
-                                    require(value = percent in startA..endA) { "a must be between 0.3 and 0.5" }
-                                    (startB + (percent - startA) * (endB - startB) / (endA - startA)).dp
-                                }
+                            percent < 0.15f -> ball.dp
+                            percent > 0.15f && percent <= 0.3f -> 10.dp
+                            percent > 0.15f && percent <= 0.5f -> {
+                                // 线性映射公式: b = startB + (a - startA) * (endB - startB) / (endA - startA)
+                                val startA = 0.3f
+                                val endA = 0.5f
+                                val startB = 10.0f
+                                val endB = 6.0f
+                                require(value = percent in startA..endA) { "a must be between 0.3 and 0.5" }
+                                (startB + (percent - startA) * (endB - startB) / (endA - startA)).dp
+                            }
 
-                                percent > 0.15f && percent > 0.5f -> 6.dp
-                                else -> ball.dp
-                            })
+                            percent > 0.15f && percent > 0.5f -> 6.dp
+                            else -> ball.dp
+                        })
                         .clip(
                             shape = RoundedCornerShape(
                                 size = 6.dp,
@@ -2510,7 +2491,7 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun MPScreen(
-            modifier: Modifier = Modifier, popBackStack: () -> Unit
+            modifier: Modifier = Modifier, popBackStack: () -> Unit,
         ) {
             val scrollState = rememberLazyListState()
             val springStiff by remember { mutableFloatStateOf(value = Spring.StiffnessLow) }
@@ -2998,7 +2979,7 @@ class MainActivity : BaseActivity() {
          * 自定义去掉水波纹的点击拓展函数
          */
         private fun Modifier.unwaveClick(
-            onClick: () -> Unit
+            onClick: () -> Unit,
         ): Modifier = composed {
             clickable(
                 indication = null,
@@ -3113,7 +3094,7 @@ class MainActivity : BaseActivity() {
                     lateinit var lastFlingAnimator: Animatable<Float, AnimationVector1D>
 
                     override fun onPreScroll(
-                        available: Offset, source: NestedScrollSource
+                        available: Offset, source: NestedScrollSource,
                     ): Offset {
                         // Found fling behavior in the wrong direction.
 
@@ -3164,7 +3145,7 @@ class MainActivity : BaseActivity() {
                     }
 
                     override fun onPostScroll(
-                        consumed: Offset, available: Offset, source: NestedScrollSource
+                        consumed: Offset, available: Offset, source: NestedScrollSource,
                     ): Offset {
                         // Found fling behavior in the wrong direction.
                         if (source != NestedScrollSource.UserInput) {
@@ -3198,7 +3179,10 @@ class MainActivity : BaseActivity() {
                         val realAvailable = available - parentConsumed
                         var leftVelocity = if (isVertical) realAvailable.y else realAvailable.x
 
-                        if (abs(offset) >= visibilityThreshold && sign(leftVelocity) != sign(offset)) {
+                        if (abs(offset) >= visibilityThreshold && sign(leftVelocity) != sign(
+                                offset
+                            )
+                        ) {
                             lastFlingAnimator = Animatable(offset).apply {
                                 when {
                                     leftVelocity < 0 -> updateBounds(lowerBound = 0f)
@@ -3221,7 +3205,7 @@ class MainActivity : BaseActivity() {
                     }
 
                     override suspend fun onPostFling(
-                        consumed: Velocity, available: Velocity
+                        consumed: Velocity, available: Velocity,
                     ): Velocity {
                         val realAvailable = when {
                             nestedScrollToParent -> available - dispatcher.dispatchPostFling(
@@ -3871,18 +3855,14 @@ class MainActivity : BaseActivity() {
      * @param block 生命周期函数体, 带有 [S] 类型 Implicit Receiver, [T] 和 [R] 类型参数, 返回值 [R]
      * @return [R] 返回值
      */
-    private fun <Current, Receiver, Scope, Result> Current.overrideScope(
-        parent: Current.() -> Result,
-        receiver: Current.(Result) -> Receiver,
-        scope: Receiver.(Result) -> Scope,
+    private fun <Current, Receiver, Scope, Result> Current.onScope(
+        receiver: Current.() -> Receiver,
+        scope: Receiver.() -> Scope,
         throws: Current.(Any) -> Nothing,
-        block: Scope.(Receiver, Result) -> Result,
+        block: Scope.(Receiver) -> Result,
     ): Result {
         try {
-            val parentResult: Result = parent(this@overrideScope)
-            val receiverResult: Receiver = receiver(parentResult)
-            val scopeResult: Scope = scope(receiverResult, parentResult)
-            return block.invoke(scopeResult, receiverResult, parentResult)
+            return block.invoke(scope(receiver()), receiver())
         } catch (exception: Exception) {
             throws(exception)
         }
