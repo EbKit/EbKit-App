@@ -7,9 +7,9 @@
         <compositeConfiguration>
           <compositeBuild compositeDefinitionSource="SCRIPT">
             <builds>
-              <build path="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" name="gradle">
+              <build path="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" name="gradle">
                 <projects>
-                  <project path="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" />
+                  <project path="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" />
                 </projects>
               </build>
             </builds>
@@ -20,10 +20,11 @@
         <option name="gradleJvm" value="jbr-21" />
         <option name="modules">
           <set>
+            <option value="$USER_HOME$/AppData/Local/Pub/Cache/git/flutter_boost-622e243416a04aae74845fc42444c5cd09eb15b0/android" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/flutter/.android/Flutter" />
-            <option value="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" />
+            <option value="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" />
           </set>
         </option>
       </GradleProjectSettings>

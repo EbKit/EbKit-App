@@ -15,7 +15,8 @@
       "version": "1.0.0",
       "dependencies": [
         "cupertino_icons",
-        "flutter"
+        "flutter",
+        "flutter_boost"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -61,6 +62,14 @@
       "name": "cupertino_icons",
       "version": "1.0.8",
       "dependencies": []
+    },
+    {
+      "name": "flutter_boost",
+      "version": "5.0.2",
+      "dependencies": [
+        "collection",
+        "flutter"
+      ]
     },
     {
       "name": "flutter",

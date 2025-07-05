@@ -1,24 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_boost/flutter_boost.dart';
 
-void main() => runApp(const MyApp());
+void main() {
+  CustomFlutterBinding();
+  runApp(const MyApp());
+}
 
-class MyApp extends StatelessWidget {
+class CustomFlutterBinding extends WidgetsFlutterBinding with BoostFlutterBinding {}
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+   Map<String, FlutterBoostRouteFactory> routerMap = {
+    '/': (RouteSettings settings, String? uniqueId) {
+      return MaterialPageRoute(settings: settings, builder: (context) {
+        return MyHomePage();
+      });
+    },
+  };
+
+  Route<dynamic>? routeFactory(RouteSettings settings, String? uniqueId) {
+    FlutterBoostRouteFactory func = routerMap[settings.name] as FlutterBoostRouteFactory;
+    return func(settings, uniqueId);
+  }
+
+  Widget appBuilder(Widget home) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: home,
+      builder: (_, __) {
+        return home;
+      },
+    );
+  }
+  @override
+  Widget build(BuildContext context) {
+    return FlutterBoostApp(
+      routeFactory,
+      appBuilder: appBuilder,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
 
-  final String title;
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -36,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(title: Text("ebkit")),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

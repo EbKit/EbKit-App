@@ -49,25 +49,18 @@ kotlin {
     sourceSets {
         main {
             dependencies {
-                implementation(libs.utilcodex)
-                implementation(libs.shizuku.api)
-                implementation(libs.shizuku.provider)
-                implementation(libs.hiddenapibypass)
-                implementation(libs.baseframework)
+                implementation(dependencyNotation = libs.utilcodex)
+                implementation(dependencyNotation = libs.shizuku.api)
+                implementation(dependencyNotation = libs.shizuku.provider)
+                implementation(dependencyNotation = libs.hiddenapibypass)
+                implementation(dependencyNotation = libs.baseframework)
 
-                implementation(project(":flutter"))
+                implementation(dependencyNotation = project(path = ":flutter"))
+                implementation(dependencyNotation = project(path = ":flutter_boost"))
             }
         }
     }
 }
-
-//ksp {
-//
-//}
-
-//dependencies {
-//
-//}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
