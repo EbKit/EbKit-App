@@ -16,3 +16,6 @@ local.properties
 
 # FVM Version Cache
 .fvm/
+
+.flutter-plugins
+.flutter-plugins-dependencies

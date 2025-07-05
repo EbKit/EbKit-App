@@ -215,7 +215,7 @@ class MainActivity : BaseActivity() {
     private val capsuleFillPaint: Paint = Paint(
         Paint.ANTI_ALIAS_FLAG,
     ).apply {
-        color = "#99FFFFFF".toColorInt()
+        color = "#99FFFFFF".toColorInt() // 99FFFFFF
         style = Paint.Style.FILL
     }
     private val capsuleStrokePaint: Paint = Paint(
@@ -2054,9 +2054,7 @@ class MainActivity : BaseActivity() {
                     navigationSuiteItems = {
                         appDestination.forEach { destination ->
                             val isCurrent: Boolean = currentDestination?.hierarchy?.any {
-                                return@any it.hasRoute(
-                                    route = destination.route::class
-                                )
+                                return@any it.hasRoute(route = destination.route::class)
                             } == true
                             item(
                                 icon = {
@@ -2532,7 +2530,7 @@ class MainActivity : BaseActivity() {
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = 0.5.dp,
-                        color = Color(color = 0xFF19142E)
+                        color = Color(color = 0x22000000)
                     )
                     LazyColumn(
                         state = scrollState,
