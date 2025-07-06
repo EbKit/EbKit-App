@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.facebook.react)
 }
 
 kotlin {
@@ -32,8 +31,11 @@ kotlin {
         }
         compileOptions {
             isCoreLibraryDesugaringEnabled = true
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+        kotlinOptions {
+            jvmTarget = "11"
         }
         buildFeatures {
             aidl = true
@@ -41,20 +43,12 @@ kotlin {
             buildConfig = true
         }
     }
-    react {
-        root = file("${rootProject.projectDir}/react")
-        reactNativeDir = file("${rootProject.projectDir}/react/node_modules/react-native")
-        codegenDir = file("${rootProject.projectDir}/react/node_modules/@react-native/codegen")
-        cliFile = file("${rootProject.projectDir}/react/node_modules/react-native/cli.js")
-        autolinkLibrariesWithApp()
-    }
     sourceSets {
         main {
             dependencies {
                 implementation(dependencyNotation = project(path = ":flutter"))
                 implementation(dependencyNotation = project(path = ":flutter_boost"))
-                implementation(dependencyNotation = libs.react.react)
-                implementation(dependencyNotation = libs.react.hermes)
+
                 implementation(dependencyNotation = libs.utilcodex)
                 implementation(dependencyNotation = libs.shizuku.api)
                 implementation(dependencyNotation = libs.shizuku.provider)

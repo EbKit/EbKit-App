@@ -1,5 +1,3 @@
-import com.facebook.react.ReactSettingsExtension
-
 pluginManagement {
     repositories {
         google {
@@ -12,7 +10,6 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")
 }
 
 dependencyResolutionManagement {
@@ -25,26 +22,8 @@ dependencyResolutionManagement {
     }
 }
 
-plugins {
-    id("com.facebook.react.settings")
-}
-
-extensions.configure<ReactSettingsExtension> {
-    autolinkLibrariesFromCommand(
-        workingDirectory = rootProject.projectDir.resolve(relative = "react"),
-        lockFiles = files(
-            paths = arrayListOf(
-                rootProject.projectDir.resolve("react/yarn.lock"),
-                rootProject.projectDir.resolve("react/package-lock.json"),
-                rootProject.projectDir.resolve("react/package.json"),
-                rootProject.projectDir.resolve("react/react-native.config.js")
-            ).toTypedArray()
-        ),
-    )
-}
-
+// Flutter
 apply(from = File("${rootProject.projectDir}/flutter/.android/include_flutter.groovy"))
-includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")
 
 rootProject.name = "EbKit"
 include(":app")

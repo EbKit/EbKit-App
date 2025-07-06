@@ -12,15 +12,6 @@
                   <project path="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" />
                 </projects>
               </build>
-              <build path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin" name="gradle-plugin-root">
-                <projects>
-                  <project path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin" />
-                  <project path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin" />
-                  <project path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/settings-plugin" />
-                  <project path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/shared" />
-                  <project path="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/shared-testutil" />
-                </projects>
-              </build>
             </builds>
           </compositeBuild>
         </compositeConfiguration>
@@ -34,11 +25,6 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/flutter/.android/Flutter" />
-            <option value="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin" />
-            <option value="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin" />
-            <option value="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/settings-plugin" />
-            <option value="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/shared" />
-            <option value="$PROJECT_DIR$/react/node_modules/@react-native/gradle-plugin/shared-testutil" />
             <option value="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" />
           </set>
         </option>
