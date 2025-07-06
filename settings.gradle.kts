@@ -1,3 +1,5 @@
+import com.facebook.react.ReactSettingsExtension
+
 pluginManagement {
     repositories {
         google {
@@ -12,25 +14,37 @@ pluginManagement {
     }
     includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS) // 必须使用 PREFER_SETTINGS
     repositories {
         google()
         mavenCentral()
-        maven(url = "https://jitpack.io")
-        maven(url = "https://storage.googleapis.com/download.flutter.io")
+        maven(url = "https://jitpack.io") // Jitpack
+        maven(url = "https://storage.googleapis.com/download.flutter.io") // Flutter
     }
 }
-plugins { id("com.facebook.react.settings") }
-extensions.configure<com.facebook.react.ReactSettingsExtension> {
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+extensions.configure<ReactSettingsExtension> {
     autolinkLibrariesFromCommand(
-        workingDirectory = settings.layout.rootDirectory.dir("./react").asFile,
-        lockFiles = settings.layout.rootDirectory.dir("./react").files(
-            "yarn.lock", "package-lock.json", "package.json", "react-native.config.js"
-        )
+        workingDirectory = rootProject.projectDir.resolve(relative = "react"),
+        lockFiles = files(
+            paths = arrayListOf(
+                rootProject.projectDir.resolve("react/yarn.lock"),
+                rootProject.projectDir.resolve("react/package-lock.json"),
+                rootProject.projectDir.resolve("react/package.json"),
+                rootProject.projectDir.resolve("react/react-native.config.js")
+            ).toTypedArray()
+        ),
     )
 }
-rootProject.name = "EbKit"
-include(":app")
+
 apply(from = File("${rootProject.projectDir}/flutter/.android/include_flutter.groovy"))
 includeBuild("${rootProject.projectDir}/react/node_modules/@react-native/gradle-plugin")
+
+rootProject.name = "EbKit"
+include(":app")

@@ -3,10 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-//    alias(libs.plugins.kotlin.parcelize)
-//    alias(libs.plugins.kotlin.kapt)
-//    alias(libs.plugins.kotlin.ksp)
-    id("com.facebook.react")
+    alias(libs.plugins.facebook.react)
 }
 
 kotlin {
@@ -38,40 +35,34 @@ kotlin {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
         }
-//        kotlinOptions {
-//            jvmTarget = "17"
-//        }
         buildFeatures {
             aidl = true
             compose = true
             buildConfig = true
         }
     }
+    react {
+        root = file("${rootProject.projectDir}/react")
+        reactNativeDir = file("${rootProject.projectDir}/react/node_modules/react-native")
+        codegenDir = file("${rootProject.projectDir}/react/node_modules/@react-native/codegen")
+        cliFile = file("${rootProject.projectDir}/react/node_modules/react-native/cli.js")
+        autolinkLibrariesWithApp()
+    }
     sourceSets {
         main {
             dependencies {
                 implementation(dependencyNotation = project(path = ":flutter"))
                 implementation(dependencyNotation = project(path = ":flutter_boost"))
-
+                implementation(dependencyNotation = libs.react.react)
+                implementation(dependencyNotation = libs.react.hermes)
                 implementation(dependencyNotation = libs.utilcodex)
                 implementation(dependencyNotation = libs.shizuku.api)
                 implementation(dependencyNotation = libs.shizuku.provider)
                 implementation(dependencyNotation = libs.hiddenapibypass)
                 implementation(dependencyNotation = libs.baseframework)
-
-                implementation("com.facebook.react:react-android")
-                implementation("com.facebook.react:hermes-android")
             }
         }
     }
-}
-
-react {
-    root = file("${rootProject.projectDir}/react")
-    reactNativeDir = file("${rootProject.projectDir}/react/node_modules/react-native")
-    codegenDir = file("${rootProject.projectDir}/react/node_modules/@react-native/codegen")
-    cliFile = file("${rootProject.projectDir}/react/node_modules/react-native/cli.js")
-    autolinkLibrariesWithApp()
 }
 
 dependencies {
