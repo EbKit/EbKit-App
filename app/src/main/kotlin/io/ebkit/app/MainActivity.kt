@@ -66,9 +66,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -79,7 +81,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
@@ -88,12 +92,18 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -173,6 +183,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowWidthSizeClass
+import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
@@ -1971,18 +1982,8 @@ class MainActivity : BaseActivity() {
     }
 
 
-    @OptIn(ExperimentalMaterial3Api::class) // Material3
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoilApi::class) // Material3
     private val mContent: IContent = object : IContent, ITheme by mTheme {
-
-        /**
-         * 布局
-         */
-        @Composable
-        override fun EbKitContent() {
-            EbKitTheme {
-                ActivityMain()
-            }
-        }
 
         /**
          * 获取胶囊按钮右填充
@@ -1999,10 +2000,53 @@ class MainActivity : BaseActivity() {
         }
 
         /**
+         * 布局
+         */
+        @Composable
+        override fun EbKitContent() {
+            EbKitTheme {
+                ActivityMain()
+            }
+        }
+
+        /**
          * MainActivity布局
          */
         @Composable
         private fun ActivityMain() {
+            var visible by remember { mutableStateOf(value = true) }
+            val inspection: Boolean = LocalInspectionMode.current
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    MPScreen(
+                        popBackStack = {
+                            visible = true
+                        },
+                    )
+                    if (!inspection) AndroidView(
+                        factory = { mViewFactory.getOverlayView },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                AnimatedVisibility(
+                    modifier = Modifier.fillMaxSize(),
+                    visible = visible,
+                ) {
+                    NavigationRoot(
+                        showMPLayer = {
+                            visible = false
+                        })
+                }
+            }
+        }
+
+        @Composable
+        private fun NavigationRoot(modifier: Modifier = Modifier, showMPLayer: () -> Unit) {
             val appDestination = arrayListOf(
                 AppDestination(
                     label = "Home",
@@ -2031,70 +2075,76 @@ class MainActivity : BaseActivity() {
                     )
                 }
             }
-            MiniProgramLayer {
-                NavigationSuiteScaffold(
-                    navigationSuiteItems = {
-                        appDestination.forEach { destination ->
-                            val isCurrent: Boolean = currentDestination?.hierarchy?.any {
-                                return@any it.hasRoute(route = destination.route::class)
-                            } == true
-                            item(
-                                icon = {
-                                    Icon(
-                                        imageVector = if (isCurrent) {
-                                            destination.selectedIcon
-                                        } else {
-                                            destination.icon
-                                        },
-                                        contentDescription = destination.label,
-                                    )
-                                },
-                                modifier = Modifier, enabled = true,
-                                label = {
-                                    Text(text = destination.label)
-                                },
-                                selected = isCurrent,
-                                onClick = {
-                                    navController.navigate(
-                                        route = destination.route,
+            NavigationSuiteScaffold(
+                navigationSuiteItems = {
+                    appDestination.forEach { destination ->
+                        val isCurrent: Boolean = currentDestination?.hierarchy?.any {
+                            return@any it.hasRoute(route = destination.route::class)
+                        } == true
+                        item(
+                            icon = {
+                                Icon(
+                                    imageVector = if (isCurrent) {
+                                        destination.selectedIcon
+                                    } else {
+                                        destination.icon
+                                    },
+                                    contentDescription = destination.label,
+                                )
+                            },
+                            modifier = Modifier, enabled = true,
+                            label = {
+                                Text(text = destination.label)
+                            },
+                            selected = isCurrent,
+                            onClick = {
+                                navController.navigate(
+                                    route = destination.route,
+                                ) {
+                                    popUpTo(
+                                        id = navController.graph.findStartDestination().id,
                                     ) {
-                                        popUpTo(
-                                            id = navController.graph.findStartDestination().id,
-                                        ) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                        saveState = true
                                     }
-                                },
-                                alwaysShowLabel = false,
-                                badge = {
-                                    Badge()
-                                },
-                            )
-                        }
-                    },
-                    layoutType = customNavSuiteType,
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            alwaysShowLabel = false,
+                            badge = {
+                                Badge()
+                            },
+                        )
+                    }
+                },
+                modifier = modifier,
+                layoutType = customNavSuiteType,
+            ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = MainActivity.Home,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = MainActivity.Home,
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        composable<MainActivity.Home> {
-                            HomeDestination(navController = navController)
-                        }
-                        composable<MainActivity.Settings> {
-                            SettingsDestination()
-                        }
+                    composable<MainActivity.Home> {
+                        HomeDestination(
+                            navController = navController,
+                            showMPLayer = showMPLayer,
+                        )
+                    }
+                    composable<MainActivity.Settings> {
+                        SettingsDestination()
                     }
                 }
             }
         }
 
         @Composable
-        private fun HomeDestination(navController: NavController) {
-//            val capsulePadding: PaddingValues = rememberCapsulePadding()
+        private fun HomeDestination(
+            modifier: Modifier = Modifier,
+            navController: NavController,
+            showMPLayer: () -> Unit,
+        ) {
+
             val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
                 rememberTopAppBarState()
             )
@@ -2103,7 +2153,7 @@ class MainActivity : BaseActivity() {
             }
             val scroll = rememberScrollState()
             Scaffold(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .nestedScroll(
                         connection = scrollBehavior.nestedScrollConnection
@@ -2172,6 +2222,21 @@ class MainActivity : BaseActivity() {
                                         },
                                         onClick = {
                                             expanded = !expanded
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("小程序")
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.KeyboardArrowDown,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            expanded = !expanded
+                                            showMPLayer()
                                         },
                                     )
                                 }
@@ -2250,476 +2315,207 @@ class MainActivity : BaseActivity() {
             modifier: Modifier = Modifier,
             content: @Composable BoxScope.() -> Unit,
         ) {
-            val inspection: Boolean = LocalInspectionMode.current
-            Box(
-                modifier = modifier.fillMaxSize(),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), content = content
-                )
-                if (!inspection) AndroidView(
-                    factory = { mViewFactory.getOverlayView },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+
         }
-
-        @Composable
-        private fun MiniProgramLayer(content: @Composable BoxScope.() -> Unit) {
-            var offset by remember { mutableFloatStateOf(value = 0f) }
-            var visible by remember { mutableStateOf(value = false) }
-            var scrollPercent by remember { mutableFloatStateOf(value = 0f) } // 滚动的百分比
-            var ballSize by remember { mutableFloatStateOf(value = 0f) } // 中间圆的大小
-            val target = with(receiver = LocalContext.current) {
-                resources.displayMetrics.heightPixels / 5 * 2
-            } // 出现小程序页面的滚动高度
-            var offsetX by remember { mutableFloatStateOf(value = 0f) } // 左右两个小圆点的X轴偏移量
-            Box(modifier = Modifier.fillMaxSize()) {
-                MPOverlay {
-                    MPScreen(
-                        modifier = Modifier.alpha(alpha = scrollPercent),
-                        popBackStack = {
-                            visible = false
-                            scrollPercent = 0f
-                        },
-                    ) // 小程序界面
-                }
-                MPMask(
-                    modifier = Modifier.fillMaxSize(),
-                    percent = scrollPercent,
-                ) // 遮罩
-                MPHost(
-                    modifier = Modifier.fillMaxSize(),
-                    visible = !visible,
-                    percent = scrollPercent,
-                    scrollOffset = { x3 ->
-                        offset = x3
-                        if (offset > target) {
-                            visible = true
-                            scrollPercent = 1.0f
-                        } else if (!visible) {
-                            scrollPercent = offset / target
-                        }
-                        scrollPercent = if (scrollPercent < 0f) 0.0f else scrollPercent
-                        ballSize = scrollPercent * 70
-                        offsetX = scrollPercent * 100
-                    },
-                    content = content,
-                ) // 应用内容
-                MPAnimate(
-                    percent = scrollPercent,
-                    offset = offset,
-                    x = offsetX,
-                    ball = ballSize,
-                ) // 三点动画
-            }
-        }
-
-        @Composable
-        private fun MPHost(
-            modifier: Modifier = Modifier,
-            visible: Boolean,
-            percent: Float,
-            scrollOffset: (offset: Float) -> Unit,
-            content: @Composable BoxScope.() -> Unit,
-        ) {
-            val scrollState = rememberLazyListState()
-            val fullHeight: Int = with(receiver = LocalContext.current) {
-                resources.displayMetrics.heightPixels
-            }
-            val springStiff by remember { mutableFloatStateOf(value = Spring.StiffnessLow) }
-            val springDamp by remember { mutableFloatStateOf(value = Spring.DampingRatioLowBouncy) }
-            val dragP by remember { mutableFloatStateOf(value = 50f) }
-            AnimatedVisibility(
-                modifier = modifier,
-                visible = visible,
-                enter = slideInVertically(initialOffsetY = { fullHeight }),
-                exit = slideOutVertically(targetOffsetY = { fullHeight }),
-            ) {
-                LazyColumn(
-                    state = scrollState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .overScrollVertical(
-                            isStartScroll = true,
-                            isEndScroll = false,
-                            nestedScrollToParent = false,
-                            scrollEasing = { x1, x2 ->
-                                parabolaScrollEasing(
-                                    currentOffset = x1, newOffset = x2, p = dragP
-                                )
-                            },
-                            springStiff = springStiff,
-                            springDamp = springDamp,
-                            scrollOffset = scrollOffset,
-                        ),
-                    flingBehavior = rememberOverscrollFlingBehavior {
-                        scrollState
-                    },
-                    content = {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .fillParentMaxSize()
-                                    .alpha(alpha = 1 - percent), content = content
-                            )
-                        }
-                    },
-                )
-            }
-        }
-
-        /**
-         * 遮罩层
-         */
-        @Composable
-        private fun MPMask(modifier: Modifier = Modifier, percent: Float) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(
-                        color = if (percent < 0.9) {
-                            MaterialTheme.colorScheme.background
-                        } else {
-                            Color.Transparent
-                        }
-                    ),
-            )
-        }
-
-        @Composable
-        private fun MPAnimate(
-            modifier: Modifier = Modifier, percent: Float, offset: Float, x: Float, ball: Float,
-        ) {
-            val density = LocalDensity.current.density
-            /** 三个点的动画*/
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-                    .statusBarsPadding()
-                    .height(height = (offset.toInt() / density).dp)
-                    .alpha(alpha = 1 - percent),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(
-                            size = when {
-                            percent < 0.15f -> ball.dp
-                            percent > 0.15f && percent <= 0.3f -> 10.dp
-                            percent > 0.15f && percent <= 0.5f -> {
-                                // 线性映射公式: b = startB + (a - startA) * (endB - startB) / (endA - startA)
-                                val startA = 0.3f
-                                val endA = 0.5f
-                                val startB = 10.0f
-                                val endB = 6.0f
-                                require(value = percent in startA..endA) { "a must be between 0.3 and 0.5" }
-                                (startB + (percent - startA) * (endB - startB) / (endA - startA)).dp
-                            }
-
-                            percent > 0.15f && percent > 0.5f -> 6.dp
-                            else -> ball.dp
-                        })
-                        .clip(
-                            shape = RoundedCornerShape(
-                                size = 6.dp,
-                            ),
-                        )
-                        .background(
-                            color = Color(
-                                color = 0xff303030,
-                            ),
-                        ),
-                )
-                Box(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x = if (percent > 0.15f) {
-                                    -x.roundToInt()
-                                } else {
-                                    0
-                                },
-                                y = 0,
-                            )
-                        }
-                        .size(
-                            size = 6.dp,
-                        )
-                        .clip(
-                            shape = RoundedCornerShape(
-                                size = 4.dp,
-                            ),
-                        )
-                        .background(
-                            color = Color(
-                                color = 0xff303030,
-                            ),
-                        ),
-                )
-                Box(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x = if (percent > 0.15f) {
-                                    x.roundToInt()
-                                } else {
-                                    0
-                                },
-                                y = 0,
-                            )
-                        }
-                        .size(
-                            size = 6.dp,
-                        )
-                        .clip(
-                            shape = RoundedCornerShape(
-                                size = 4.dp,
-                            ),
-                        )
-                        .background(
-                            color = Color(
-                                color = 0xff303030,
-                            ),
-                        ),
-                )
-            }
-        }
-
 
         @Composable
         private fun MPScreen(
-            modifier: Modifier = Modifier, popBackStack: () -> Unit,
+            modifier: Modifier = Modifier,
+            popBackStack: () -> Unit,
         ) {
-            val scrollState = rememberLazyListState()
-            val springStiff by remember { mutableFloatStateOf(value = Spring.StiffnessLow) }
-            val springDamp by remember { mutableFloatStateOf(value = Spring.DampingRatioLowBouncy) }
-            val dragP by remember { mutableFloatStateOf(value = 50f) }
-            val target = with(LocalContext.current) {
-                resources.displayMetrics.heightPixels / 4
-            }
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(color = Color(color = 0xff1B1B2B)),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Column {
+            val scrollState = rememberScrollState()
+            Scaffold(
+                modifier = modifier.fillMaxSize(),
+                topBar = {
                     MPTopBar()
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 0.5.dp,
-                        color = Color(color = 0x22000000)
-                    )
-                    LazyColumn(
-                        state = scrollState,
+                },
+                bottomBar = {
+                    MPBottomBar(popBackStack = popBackStack)
+                },
+                containerColor = Color(color = 0xff1B1B2B),
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues = innerPadding)
+                        .verticalScroll(state = scrollState),
+                ) {
+                    Box(
+                        modifier = Modifier.padding(
+                            start = 30.dp,
+                            bottom = 15.dp,
+                            top = 30.dp,
+                        ),
+                    ) {
+                        Text(
+                            text = "音乐和视频",
+                            fontSize = 14.sp,
+                            color = Color(
+                                color = 0xFF8E8E9E,
+                            ),
+                        )
+                    }
+                    MPPlayer()
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .overScrollVertical(
-                                isStartScroll = false,
-                                isEndScroll = true,
-                                nestedScrollToParent = false,
-                                scrollEasing = { x1, x2 ->
-                                    parabolaScrollEasing(
-                                        currentOffset = x1,
-                                        newOffset = x2,
-                                        p = dragP,
-                                    )
-                                },
-                                springStiff = springStiff,
-                                springDamp = springDamp,
-                                scrollOffset = { offset ->
-                                    if (offset < -target) {
-                                        popBackStack()
-                                    }
-                                },
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(
+                                start = 30.dp,
+                                bottom = 15.dp,
+                                top = 30.dp,
+                                end = 30.dp,
                             ),
                     ) {
-                        item {
+                        Row {
                             Box(
-                                modifier = Modifier.padding(
-                                    start = 30.dp,
-                                    bottom = 15.dp,
-                                    top = 30.dp,
-                                ),
+                                modifier = Modifier.weight(weight = 1f),
+                                contentAlignment = Alignment.CenterStart
                             ) {
                                 Text(
-                                    text = "音乐和视频",
-                                    fontSize = 14.sp,
-                                    color = Color(
-                                        color = 0xFF8E8E9E,
-                                    ),
-                                )
-                            }
-                        }
-                        item {
-                            MPPlayer()
-                        }
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .padding(
-                                        start = 30.dp,
-                                        bottom = 15.dp,
-                                        top = 30.dp,
-                                        end = 30.dp,
-                                    ),
-                            ) {
-                                Row {
-                                    Box(
-                                        modifier = Modifier.weight(weight = 1f),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = "最近使用小程序",
-                                            fontSize = 14.sp,
-                                            color = Color(color = 0xff8E8E9E),
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(weight = 1f)
-                                            .wrapContentHeight(align = Alignment.CenterVertically),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "更多",
-                                                fontSize = 14.sp,
-                                                color = Color(color = 0xff8E8E9E),
-                                            )
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(size = 16.dp),
-                                                tint = Color(color = 0xff8E8E9E),
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        item {
-                            AppsGrid(list = miniProgramList)
-                        }
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .padding(start = 30.dp, bottom = 15.dp, top = 30.dp),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Text(
-                                    text = "我的小程序",
+                                    text = "最近使用小程序",
                                     fontSize = 14.sp,
                                     color = Color(color = 0xff8E8E9E),
                                 )
                             }
-                        }
-                        item {
-                            AppsGrid(list = mineMiniProgramList)
-                        }
-                        item {
-                            Spacer(
+                            Box(
                                 modifier = Modifier
-                                    .navigationBarsPadding()
-                                    .height(height = 70.dp),
-                            )
+                                    .weight(weight = 1f)
+                                    .wrapContentHeight(align = Alignment.CenterVertically),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "更多",
+                                        fontSize = 14.sp,
+                                        color = Color(color = 0xff8E8E9E),
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(size = 16.dp),
+                                        tint = Color(color = 0xff8E8E9E),
+                                    )
+                                }
+                            }
                         }
                     }
+                    AppsGrid(list = miniProgramList)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(
+                                start = 30.dp,
+                                bottom = 15.dp,
+                                top = 30.dp,
+                            ),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            text = "我的小程序",
+                            fontSize = 14.sp,
+                            color = Color(color = 0xff8E8E9E),
+                        )
+                    }
+                    AppsGrid(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        list = mineMiniProgramList,
+                    )
                 }
-                MPBottomBar(
-                    popBackStack = {
-                        popBackStack()
-                    },
-                )
             }
         }
 
         @Composable
         private fun MPTopBar(modifier: Modifier = Modifier) {
-            val textState = remember {
-                mutableStateOf(
-                    value = TextFieldValue(),
-                )
-            }
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .height(height = 56.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "最近",
-                        fontSize = 16.sp,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                Box(
-                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart
-                ) {
-                    BasicTextField(
-                        enabled = false,
-                        value = textState.value,
-                        onValueChange = { value ->
-                            textState.value = value
-                        },
-                        textStyle = TextStyle(
-                            fontSize = 16.sp
-                        ),
-                        modifier = Modifier
-                            .width(width = 85.dp)
-                            .height(height = 25.dp)
-                            .padding(start = 20.dp),
-                        decorationBox = { innerTextField ->
-                            Box(
+            val capsulePadding: PaddingValues = rememberCapsulePadding()
+            val textState = remember { mutableStateOf(value = TextFieldValue()) }
+            Column(modifier = modifier.fillMaxWidth()) {
+                CenterAlignedTopAppBar(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = {
+                        Text(
+                            text = "最近",
+                            fontSize = 16.sp,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                        )
+                    },
+                    navigationIcon = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .wrapContentWidth(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            BasicTextField(
+                                enabled = false,
+                                value = textState.value,
+                                onValueChange = { value ->
+                                    textState.value = value
+                                },
+                                textStyle = TextStyle(
+                                    fontSize = 16.sp
+                                ),
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(shape = RoundedCornerShape(size = 20.dp))
-                                    .background(Color(color = 0xff434056))
-                                    .padding(start = 6.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Search,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(size = 20.dp),
-                                        tint = Color(color = 0xff8E8E9E)
-                                    )
+                                    .width(width = 85.dp)
+                                    .height(height = 25.dp)
+                                    .padding(start = 20.dp),
+                                decorationBox = { innerTextField ->
                                     Box(
-                                        modifier = Modifier.wrapContentSize(),
-                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(shape = RoundedCornerShape(size = 20.dp))
+                                            .background(Color(color = 0xff434056))
+                                            .padding(start = 6.dp),
+                                        contentAlignment = Alignment.CenterStart
                                     ) {
-                                        Text(
-                                            text = "搜索",
-                                            fontSize = 13.sp,
-                                            color = Color(color = 0xff8E8E9E),
-                                            textAlign = TextAlign.Center,
-                                        )
-                                        innerTextField()
+                                        Row(
+                                            modifier = Modifier.fillMaxSize(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Search,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(size = 20.dp),
+                                                tint = Color(color = 0xff8E8E9E)
+                                            )
+                                            Box(
+                                                modifier = Modifier.wrapContentSize(),
+                                                contentAlignment = Alignment.CenterStart,
+                                            ) {
+                                                Text(
+                                                    text = "搜索",
+                                                    fontSize = 13.sp,
+                                                    color = Color(color = 0xff8E8E9E),
+                                                    textAlign = TextAlign.Center,
+                                                )
+                                                innerTextField()
+                                            }
+                                        }
                                     }
-                                }
-                            }
-                        },
-                    )
-                }
+                                },
+                            )
+                        }
+                    },
+                    actions = {
+                        Spacer(
+                            modifier = Modifier.padding(
+                                paddingValues = capsulePadding,
+                            ),
+                        )
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
+                )
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 0.5.dp,
+                    color = Color(color = 0x22000000)
+                )
             }
         }
 
@@ -2728,67 +2524,91 @@ class MainActivity : BaseActivity() {
             modifier: Modifier = Modifier,
             popBackStack: () -> Unit,
         ) {
-            Box(
+            BottomAppBar(
                 modifier = modifier
                     .fillMaxWidth()
-                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                    .background(Color(color = 0xff787493))
-                    .navigationBarsPadding()
-                    .unwaveClick(onClick = popBackStack),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(height = 70.dp),
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(start = 16.dp),
-                            text = "小程序",
-                            maxLines = 1,
-                            fontSize = 16.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            color = Color.White
-                        )
-                    }
-                    Box(
-                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Row(
-                            Modifier
-                                .fillMaxSize()
-                                .padding(end = 15.dp),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    /* doSomething() */
-                                }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(30.dp),
-                                    tint = Color.White
-                                )
-                            }
-                            IconButton(onClick = {
-                                /* doSomething() */
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.AddCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(25.dp),
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+                    .fillMaxWidth()
+                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
+                actions = {
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp),
+                        text = "小程序",
+                        maxLines = 1,
+                        fontSize = 16.sp,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White
+                    )
+                },
+                floatingActionButton = {
+                    ExtendedFloatingActionButton(
+                        text = {
+                        Text("Back")
+                    },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = popBackStack,
+                        modifier = Modifier.wrapContentSize(),
+                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                    )
+                },
+                containerColor = Color(color = 0xff787493),
+            )
+//            BottomAppBar(
+//                modifier = modifier
+//                    .fillMaxWidth()
+//                    .fillMaxWidth()
+//                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+//                    .unwaveClick(onClick = popBackStack),
+//                containerColor = Color(color = 0xff787493)
+//            ) {
+//                Box(
+//                    modifier = Modifier.fillMaxWidth(),
+//                ) {
+//                    Box(
+//                        modifier = Modifier.fillMaxSize(),
+//                        contentAlignment = Alignment.CenterStart,
+//                    ) {
+//
+//                    }
+//                    Box(
+//                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd
+//                    ) {
+//                        Row(
+//                            Modifier
+//                                .fillMaxSize()
+//                                .padding(end = 15.dp),
+//                            horizontalArrangement = Arrangement.End,
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            IconButton(
+//                                onClick = {
+//                                    /* doSomething() */
+//                                }) {
+//                                Icon(
+//                                    imageVector = Icons.Filled.Search,
+//                                    contentDescription = null,
+//                                    modifier = Modifier.size(30.dp),
+//                                    tint = Color.White
+//                                )
+//                            }
+//                            IconButton(onClick = {
+//                                /* doSomething() */
+//                            }) {
+//                                Icon(
+//                                    imageVector = Icons.Outlined.AddCircle,
+//                                    contentDescription = null,
+//                                    modifier = Modifier.size(25.dp),
+//                                    tint = Color.White
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//            }
         }
 
         @Composable
@@ -2988,336 +2808,6 @@ class MainActivity : BaseActivity() {
                     MutableInteractionSource()
                 },
             )
-        }
-
-        /**
-         * @see overScrollOutOfBound
-         */
-        private fun Modifier.overScrollVertical(
-            isStartScroll: Boolean = true,
-            isEndScroll: Boolean = false,
-            nestedScrollToParent: Boolean = true,
-            scrollEasing: ((currentOffset: Float, newOffset: Float) -> Float)? = null,
-            springStiff: Float = mOutBoundSpringStiff,
-            springDamp: Float = mOutBoundSpringDamp,
-            scrollOffset: (offset: Float) -> Unit,
-        ): Modifier = this@overScrollVertical.overScrollOutOfBound(
-            isStartScroll = isStartScroll,
-            isEndScroll = isEndScroll,
-            isVertical = true,
-            nestedScrollToParent = nestedScrollToParent,
-            scrollEasing = scrollEasing,
-            springStiff = springStiff,
-            springDamp = springDamp,
-            scrollOffset = scrollOffset
-        )
-
-        /**
-         * A parabolic rolling easing curve.
-         *
-         * When rolling in the same direction, the farther away from 0, the greater the "resistance"; the closer to 0, the smaller the "resistance";
-         *
-         * No drag effect is applied when the scrolling direction is opposite to the currently existing overscroll offset
-         *
-         * Note: when [p] = 50f, its performance should be consistent with iOS
-         * @param currentOffset Offset value currently out of bounds
-         * @param newOffset The offset of the new scroll
-         * @param p Key parameters for parabolic curve calculation
-         * @param density Without this param, the unit of offset is pixels,
-         * so we need this variable to have the same expectations on different devices.
-         */
-        @Stable
-        private fun parabolaScrollEasing(
-            currentOffset: Float,
-            newOffset: Float,
-            p: Float = 50f,
-            density: Float = 4f,
-        ): Float {
-            val realP = p * density
-            val ratio = (realP / (sqrt(
-                x = realP * abs(x = currentOffset + newOffset / 2).coerceAtLeast(
-                    minimumValue = Float.MIN_VALUE
-                )
-            ))).coerceIn(
-                minimumValue = Float.MIN_VALUE,
-                maximumValue = 1f,
-            )
-            return if (sign(x = currentOffset) == sign(x = newOffset)) {
-                currentOffset + newOffset * ratio
-            } else {
-                currentOffset + newOffset
-            }
-        }
-
-
-        /**
-         * OverScroll effect for scrollable Composable .
-         *
-         * - You should call it before Modifiers with similar semantics such as [Modifier.scrollable], so that nested scrolling can work normally
-         * - You should use it with [rememberOverscrollFlingBehavior]
-         * @param isEndScroll Is it allowed to have elastic effects at the end ?
-         * @param isVertical is vertical, or horizontal ?
-         * @param nestedScrollToParent Whether to dispatch nested scroll events to parent
-         * @param scrollEasing U can refer to [defaultParabolaScrollEasing], The incoming values are the currently existing overscroll Offset
-         * and the new offset from the gesture.
-         * modify it to cooperate with [springStiff] to customize the sliding damping effect.
-         * The current default easing comes from iOS, you don't need to modify it!
-         * @param springStiff springStiff for overscroll effect，For better user experience, the new value is not recommended to be higher than[Spring.StiffnessMediumLow]
-         * @param springDamp springDamp for overscroll effect，generally do not need to set
-         */
-        private fun Modifier.overScrollOutOfBound(
-            isStartScroll: Boolean = true,
-            isEndScroll: Boolean = false,
-            isVertical: Boolean = true,
-            nestedScrollToParent: Boolean = true,
-            scrollEasing: ((currentOffset: Float, newOffset: Float) -> Float)?,
-            springStiff: Float = mOutBoundSpringStiff,
-            springDamp: Float = mOutBoundSpringDamp,
-            scrollOffset: (offset: Float) -> Unit,
-        ): Modifier = composed {
-            val nestedScrollToParent by rememberUpdatedState(nestedScrollToParent)
-            val scrollEasing by rememberUpdatedState(
-                newValue = scrollEasing ?: defaultParabolaScrollEasing
-            )
-            val springStiff by rememberUpdatedState(springStiff)
-            val springDamp by rememberUpdatedState(springDamp)
-            val isVertical by rememberUpdatedState(isVertical)
-            val dispatcher = remember { NestedScrollDispatcher() }
-            var offset by remember { mutableFloatStateOf(0f) }
-
-            val nestedConnection = remember {
-                object : NestedScrollConnection {
-                    /**
-                     * If the offset is less than this value, we consider the animation to end.
-                     */
-                    val visibilityThreshold = 0.5f
-                    lateinit var lastFlingAnimator: Animatable<Float, AnimationVector1D>
-
-                    override fun onPreScroll(
-                        available: Offset, source: NestedScrollSource,
-                    ): Offset {
-                        // Found fling behavior in the wrong direction.
-
-                        if (source != NestedScrollSource.UserInput) {
-                            return dispatcher.dispatchPreScroll(available, source)
-                        }
-                        if (::lastFlingAnimator.isInitialized && lastFlingAnimator.isRunning) {
-                            dispatcher.coroutineScope.launch {
-                                lastFlingAnimator.stop()
-                            }
-                        }
-                        val realAvailable = when {
-                            nestedScrollToParent -> available - dispatcher.dispatchPreScroll(
-                                available, source
-                            )
-
-                            else -> available
-                        }
-                        val realOffset = if (isVertical) realAvailable.y else realAvailable.x
-
-                        val isSameDirection = sign(realOffset) == sign(offset)
-                        if (abs(offset) <= visibilityThreshold || isSameDirection) {
-                            return available - realAvailable
-                        }
-                        val offsetAtLast = scrollEasing(offset, realOffset)
-                        // sign changed, coerce to start scrolling and exit
-                        return if (sign(offset) != sign(offsetAtLast)) {
-                            offset = 0f
-                            if (isVertical) {
-                                Offset(
-                                    x = available.x - realAvailable.x,
-                                    y = available.y - realAvailable.y + realOffset
-                                )
-                            } else {
-                                Offset(
-                                    x = available.x - realAvailable.x + realOffset,
-                                    y = available.y - realAvailable.y
-                                )
-                            }
-                        } else {
-                            offset = offsetAtLast
-                            if (isVertical) {
-                                Offset(x = available.x - realAvailable.x, y = available.y)
-                            } else {
-                                Offset(x = available.x, y = available.y - realAvailable.y)
-                            }
-                        }
-                    }
-
-                    override fun onPostScroll(
-                        consumed: Offset, available: Offset, source: NestedScrollSource,
-                    ): Offset {
-                        // Found fling behavior in the wrong direction.
-                        if (source != NestedScrollSource.UserInput) {
-                            return dispatcher.dispatchPreScroll(available, source)
-                        }
-                        val realAvailable = when {
-                            nestedScrollToParent -> available - dispatcher.dispatchPostScroll(
-                                consumed, available, source
-                            )
-
-                            else -> available
-                        }
-                        offset = scrollEasing(
-                            offset, if (isVertical) realAvailable.y else realAvailable.x
-                        )
-                        return if (isVertical) {
-                            Offset(x = available.x - realAvailable.x, y = available.y)
-                        } else {
-                            Offset(x = available.x, y = available.y - realAvailable.y)
-                        }
-                    }
-
-                    override suspend fun onPreFling(available: Velocity): Velocity {
-                        if (::lastFlingAnimator.isInitialized && lastFlingAnimator.isRunning) {
-                            lastFlingAnimator.stop()
-                        }
-                        val parentConsumed = when {
-                            nestedScrollToParent -> dispatcher.dispatchPreFling(available)
-                            else -> Velocity.Zero
-                        }
-                        val realAvailable = available - parentConsumed
-                        var leftVelocity = if (isVertical) realAvailable.y else realAvailable.x
-
-                        if (abs(offset) >= visibilityThreshold && sign(leftVelocity) != sign(
-                                offset
-                            )
-                        ) {
-                            lastFlingAnimator = Animatable(offset).apply {
-                                when {
-                                    leftVelocity < 0 -> updateBounds(lowerBound = 0f)
-                                    leftVelocity > 0 -> updateBounds(upperBound = 0f)
-                                }
-                            }
-                            leftVelocity = lastFlingAnimator.animateTo(
-                                0f,
-                                spring(springDamp, springStiff, visibilityThreshold),
-                                leftVelocity
-                            ) {
-                                offset = scrollEasing(offset, value - offset)
-                            }.endState.velocity
-                        }
-                        return if (isVertical) {
-                            Velocity(parentConsumed.x, y = available.y - leftVelocity)
-                        } else {
-                            Velocity(available.x - leftVelocity, y = parentConsumed.y)
-                        }
-                    }
-
-                    override suspend fun onPostFling(
-                        consumed: Velocity, available: Velocity,
-                    ): Velocity {
-                        val realAvailable = when {
-                            nestedScrollToParent -> available - dispatcher.dispatchPostFling(
-                                consumed, available
-                            )
-
-                            else -> available
-                        }
-                        lastFlingAnimator = Animatable(offset)
-                        lastFlingAnimator.animateTo(
-                            0f,
-                            spring(springDamp, springStiff, visibilityThreshold),
-                            if (isVertical) realAvailable.y else realAvailable.x
-                        ) {
-                            offset = scrollEasing(offset, value - offset)
-                        }
-                        return if (isVertical) {
-                            Velocity(x = available.x - realAvailable.x, y = available.y)
-                        } else {
-                            Velocity(x = available.x, y = available.y - realAvailable.y)
-                        }
-                    }
-                }
-            }
-
-            scrollOffset(offset)
-            nestedScrollToParent
-
-            if (!isEndScroll && offset < 0f) {
-                offset = 0f
-            }
-            if (!isStartScroll && offset > 0f) {
-                offset = 0f
-            }
-
-            this
-                .clipToBounds()
-                .nestedScroll(
-                    connection = nestedConnection,
-                    dispatcher = dispatcher,
-                )
-                .graphicsLayer {
-                    if (isVertical) {
-                        translationY = offset
-                    } else {
-                        translationX = offset
-                    }
-                }
-        }
-
-        private val defaultParabolaScrollEasing: (currentOffset: Float, newOffset: Float) -> Float
-            @Composable get() {
-                val density = LocalDensity.current.density
-                return { currentOffset, newOffset ->
-                    parabolaScrollEasing(
-                        currentOffset = currentOffset,
-                        newOffset = newOffset,
-                        density = density,
-                    )
-                }
-            }
-
-
-        /**
-         * You should use it with [overScrollVertical]
-         * @param decaySpec You can use instead [rememberSplineBasedDecay]
-         * @param getScrollState Pass in your [ScrollableState], for [LazyColumn]/[LazyRow] , it's [LazyListState]
-         */
-        @Composable
-        private fun rememberOverscrollFlingBehavior(
-            decaySpec: DecayAnimationSpec<Float> = exponentialDecay(),
-            getScrollState: () -> ScrollableState,
-        ): FlingBehavior = remember(decaySpec, getScrollState) {
-            object : FlingBehavior {
-                /**
-                 * - We should check it every frame of fling
-                 * - Should stop fling when returning true and return the remaining speed immediately.
-                 * - Without this detection, scrollBy() will continue to consume velocity,
-                 * which will cause a velocity error in nestedScroll.
-                 */
-                private val Float.canNotBeConsumed: Boolean // this is Velocity
-                    get() {
-                        val state = getScrollState()
-                        return !(this < 0 && state.canScrollBackward || this > 0 && state.canScrollForward)
-                    }
-
-                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                    if (initialVelocity.canNotBeConsumed) {
-                        return initialVelocity
-                    }
-                    return if (abs(initialVelocity) > 1f) {
-                        var velocityLeft = initialVelocity
-                        var lastValue = 0f
-                        AnimationState(
-                            initialValue = 0f,
-                            initialVelocity = initialVelocity,
-                        ).animateDecay(decaySpec) {
-                            val delta = value - lastValue
-                            val consumed = scrollBy(delta)
-                            lastValue = value
-                            velocityLeft = this.velocity
-                            // avoid rounding errors and stop if anything is unconsumed
-                            if (abs(delta - consumed) > 0.5f || velocityLeft.canNotBeConsumed) {
-                                cancelAnimation()
-                            }
-                        }
-                        velocityLeft
-                    } else {
-                        initialVelocity
-                    }
-                }
-            }
         }
     }
 
