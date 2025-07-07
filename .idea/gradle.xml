@@ -21,8 +21,8 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/.android/Flutter" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/flutter/.android/Flutter" />
             <option value="$USER_HOME$/fvm/versions/3.32.5/packages/flutter_tools/gradle" />
           </set>
         </option>

@@ -47,7 +47,6 @@ kotlin {
         main {
             dependencies {
                 implementation(dependencyNotation = project(path = ":flutter"))
-
                 implementation(dependencyNotation = libs.utilcodex)
                 implementation(dependencyNotation = libs.shizuku.api)
                 implementation(dependencyNotation = libs.shizuku.provider)
