@@ -59,7 +59,7 @@ kotlin {
 
 dependencies {
     implementation("com.google.accompanist:accompanist-coil:0.15.0")
-
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

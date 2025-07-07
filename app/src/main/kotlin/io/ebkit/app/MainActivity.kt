@@ -67,16 +67,22 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -1552,9 +1558,7 @@ class MainActivity : BaseActivity() {
                     DartExecutor.DartEntrypoint.createDefault()
                 )
 
-                FlutterEngineCache
-                    .getInstance()
-                    .put("my_engine_id", flutterEngine)
+                FlutterEngineCache.getInstance().put("my_engine_id", flutterEngine)
 
                 mContentFrame.setOnTouchListener(delayHideTouchListener)
                 setContentView(view = getContentView, params = getFillMaxSize)
@@ -2118,11 +2122,18 @@ class MainActivity : BaseActivity() {
                         },
                         actions = {
                             IconButton(
-//                                modifier = Modifier.padding(
-//                                    paddingValues = capsulePadding,
-//                                ),
                                 onClick = {
-                                    expanded = !expanded
+
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.baseline_install_mobile_24),
+                                    contentDescription = null,
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    expanded = true
                                 },
                             ) {
                                 Icon(
@@ -2197,27 +2208,55 @@ class MainActivity : BaseActivity() {
                     )
                 },
             ) { innerPadding ->
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues = innerPadding),
-                    contentAlignment = Alignment.Center
+                        .padding(paddingValues = innerPadding)
+                        .verticalScroll(state = scroll),
                 ) {
-
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize()
+                    Card(
+                        modifier = Modifier.padding(
+                            start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp,
+                        ),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
                     ) {
-                        items(100) {
-                            Text(
-                                text = "Item $it", modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Error, contentDescription = null
                             )
+                            Column(
+                                modifier = Modifier
+                                    .weight(weight = 2f)
+                                    .padding(start = 16.dp)
+                            ) {
+                                Text(
+                                    text = "EcosedKit未安装",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Spacer(modifier = Modifier.height(height = 4.dp))
+                                Text(
+                                    text = "点此安装",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    showMPLayer()
+                                },
+                            ) {
+                                Text(text = "Apps")
+                            }
                         }
+
+
                     }
-
-
                 }
             }
         }
