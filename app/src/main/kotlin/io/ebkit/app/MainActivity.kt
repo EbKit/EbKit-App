@@ -157,6 +157,9 @@ import com.kongzue.baseframework.interfaces.LifeCircleListener
 import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
+import io.flutter.embedding.engine.dart.DartExecutor
 import kotlinx.serialization.Serializable
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import kotlin.math.pow
@@ -1543,6 +1546,16 @@ class MainActivity : BaseActivity() {
                 // 启用全面屏沉浸
                 enableEdgeToEdge()
 
+                val flutterEngine = FlutterEngine(this)
+
+                flutterEngine.dartExecutor.executeDartEntrypoint(
+                    DartExecutor.DartEntrypoint.createDefault()
+                )
+
+                FlutterEngineCache
+                    .getInstance()
+                    .put("my_engine_id", flutterEngine)
+
                 mContentFrame.setOnTouchListener(delayHideTouchListener)
                 setContentView(view = getContentView, params = getFillMaxSize)
             }
@@ -2471,8 +2484,8 @@ class MainActivity : BaseActivity() {
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
                         text = "小程序",
+                        style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
-                        fontSize = 16.sp,
                         overflow = TextOverflow.Ellipsis,
                         color = Color.White
                     )
