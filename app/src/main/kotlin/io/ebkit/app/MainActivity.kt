@@ -195,6 +195,7 @@ import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -384,24 +385,12 @@ class MainActivity : BaseActivity() {
         )
     }
 
-
-//
-//    private interface IA {
-//        fun aFun()
-//    }
-//
-//    private val mA: IA = object : IA {
-//        override fun aFun() {
-//
-//        }
-//    }
-//
-//    private val mB: Any = object : Any(), IA by mA {
-//
-//        fun b() {
-//            aFun()
-//        }
-//    }
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("L")
+        }
+    }
 
 
     override fun resetContentView(): View = mContentFrame
@@ -1060,10 +1049,19 @@ class MainActivity : BaseActivity() {
             get() = mMenuButton
         override val getCloseButton: View
             get() = mCloseButton
-        override val getFillMaxSize: ViewGroup.LayoutParams
-            get() = mFillMaxSize
-        override val getFillMinSize: ViewGroup.LayoutParams
-            get() = mFillMinSize
+
+        override val getFillMaxSize: ViewGroup.LayoutParams by lazy {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            )
+        }
+        override val getFillMinSize: ViewGroup.LayoutParams by lazy {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+            )
+        }
     }
 
     private val mBackPressHandler: IBackPressHandler = object : IBackPressHandler {
@@ -2557,58 +2555,6 @@ class MainActivity : BaseActivity() {
                 },
                 containerColor = Color(color = 0xff787493),
             )
-//            BottomAppBar(
-//                modifier = modifier
-//                    .fillMaxWidth()
-//                    .fillMaxWidth()
-//                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-//                    .unwaveClick(onClick = popBackStack),
-//                containerColor = Color(color = 0xff787493)
-//            ) {
-//                Box(
-//                    modifier = Modifier.fillMaxWidth(),
-//                ) {
-//                    Box(
-//                        modifier = Modifier.fillMaxSize(),
-//                        contentAlignment = Alignment.CenterStart,
-//                    ) {
-//
-//                    }
-//                    Box(
-//                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd
-//                    ) {
-//                        Row(
-//                            Modifier
-//                                .fillMaxSize()
-//                                .padding(end = 15.dp),
-//                            horizontalArrangement = Arrangement.End,
-//                            verticalAlignment = Alignment.CenterVertically
-//                        ) {
-//                            IconButton(
-//                                onClick = {
-//                                    /* doSomething() */
-//                                }) {
-//                                Icon(
-//                                    imageVector = Icons.Filled.Search,
-//                                    contentDescription = null,
-//                                    modifier = Modifier.size(30.dp),
-//                                    tint = Color.White
-//                                )
-//                            }
-//                            IconButton(onClick = {
-//                                /* doSomething() */
-//                            }) {
-//                                Icon(
-//                                    imageVector = Icons.Outlined.AddCircle,
-//                                    contentDescription = null,
-//                                    modifier = Modifier.size(25.dp),
-//                                    tint = Color.White
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//            }
         }
 
         @Composable
