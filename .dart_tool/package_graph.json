@@ -14,10 +14,8 @@
       "name": "ebkit_app",
       "version": "1.0.0",
       "dependencies": [
-        "battery_plus",
         "cupertino_icons",
-        "flutter",
-        "flutter_boost"
+        "flutter"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -60,29 +58,9 @@
       ]
     },
     {
-      "name": "battery_plus",
-      "version": "6.2.2",
-      "dependencies": [
-        "battery_plus_platform_interface",
-        "flutter",
-        "flutter_web_plugins",
-        "meta",
-        "upower",
-        "web"
-      ]
-    },
-    {
       "name": "cupertino_icons",
       "version": "1.0.8",
       "dependencies": []
-    },
-    {
-      "name": "flutter_boost",
-      "version": "5.0.2",
-      "dependencies": [
-        "collection",
-        "flutter"
-      ]
     },
     {
       "name": "flutter",
@@ -260,86 +238,9 @@
       ]
     },
     {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
-      "name": "upower",
-      "version": "0.7.0",
-      "dependencies": [
-        "dbus"
-      ]
-    },
-    {
-      "name": "battery_plus_platform_interface",
-      "version": "2.0.1",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "characters",
-        "collection",
-        "flutter",
-        "material_color_utilities",
-        "meta",
-        "vector_math"
-      ]
-    },
-    {
       "name": "sky_engine",
       "version": "0.0.0",
       "dependencies": []
-    },
-    {
-      "name": "dbus",
-      "version": "0.7.11",
-      "dependencies": [
-        "args",
-        "ffi",
-        "meta",
-        "xml"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "xml",
-      "version": "6.5.0",
-      "dependencies": [
-        "collection",
-        "meta",
-        "petitparser"
-      ]
-    },
-    {
-      "name": "ffi",
-      "version": "2.1.4",
-      "dependencies": []
-    },
-    {
-      "name": "args",
-      "version": "2.7.0",
-      "dependencies": []
-    },
-    {
-      "name": "petitparser",
-      "version": "6.1.0",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
     }
   ],
   "configVersion": 1

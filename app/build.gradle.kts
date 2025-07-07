@@ -47,7 +47,6 @@ kotlin {
         main {
             dependencies {
                 implementation(dependencyNotation = project(path = ":flutter"))
-                implementation(dependencyNotation = project(path = ":flutter_boost"))
 
                 implementation(dependencyNotation = libs.utilcodex)
                 implementation(dependencyNotation = libs.shizuku.api)
