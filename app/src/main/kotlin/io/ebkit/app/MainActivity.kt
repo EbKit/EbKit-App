@@ -2311,8 +2311,6 @@ class MainActivity : BaseActivity() {
                         Text(text = "应用")
                     }
                 }
-
-
             }
         }
 
@@ -2352,15 +2350,6 @@ class MainActivity : BaseActivity() {
 
                 }
             }
-        }
-
-
-        @Composable
-        private fun MPOverlay(
-            modifier: Modifier = Modifier,
-            content: @Composable BoxScope.() -> Unit,
-        ) {
-
         }
 
         @Composable

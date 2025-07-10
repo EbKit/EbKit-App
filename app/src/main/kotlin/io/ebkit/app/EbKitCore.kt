@@ -5,6 +5,7 @@ import org.koin.core.component.KoinComponent
 
 internal class EbKitCore : ContextWrapper(null), KoinComponent {
 
+    fun ok() {
 
-
+    }
 }

@@ -1,7 +1,6 @@
 package io.ebkit.app
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
