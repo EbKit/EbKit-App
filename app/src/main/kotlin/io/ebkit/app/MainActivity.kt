@@ -64,12 +64,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.InstallMobile
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Settings
@@ -120,6 +122,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -350,17 +353,11 @@ class MainActivity : BaseActivity() {
 
     override fun resetContentView(): View = mContentFrame
 
-    override fun initViews() {
-        setLifeCircleListener(mLifecycleDelegate)
-    }
+    override fun initViews() = setLifeCircleListener(mLifecycleDelegate)
 
-    override fun initDatas(parameter: JumpParameter?) {
+    override fun initDatas(parameter: JumpParameter?) = Unit
 
-    }
-
-    override fun setEvents() {
-
-    }
+    override fun setEvents() = Unit
 
     override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
         (mContentFrame as ViewGroup).addView(view, params)
@@ -376,6 +373,7 @@ class MainActivity : BaseActivity() {
             scope = { bridgeScope { this } },
             throws = { error(it) },
         ) {
+            super.onCreate()
             onCreate(activity = it)
         }
 
@@ -387,6 +385,7 @@ class MainActivity : BaseActivity() {
             scope = { bridgeScope { this } },
             throws = { error(it) },
         ) {
+            super.onDestroy()
             onDestroy()
         }
     }
@@ -943,20 +942,6 @@ class MainActivity : BaseActivity() {
         ),
     )
 
-    private val mineMiniProgramList: ArrayList<MiniProgramItem> = arrayListOf<MiniProgramItem>(
-        MiniProgramItem(
-            title = "羊城通",
-            icon = "https://img2.baidu.com/it/u=2751300851,4181594410&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "青桔单车",
-            icon = "https://img0.baidu.com/it/u=195120191,2939897897&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
-        ),
-    )
-
-    private val mOutBoundSpringStiff = 150f
-    private val mOutBoundSpringDamp = 0.86f
-
     /**
      ***********************************************************************************************
      *
@@ -994,6 +979,9 @@ class MainActivity : BaseActivity() {
      */
     @Serializable
     data object Settings
+
+    @Serializable
+    data object Installer
 
     private val mViewFactory: IViewFactory = object : IViewFactory {
         override val getContentView: View
@@ -1549,16 +1537,21 @@ class MainActivity : BaseActivity() {
             override fun onCreate(owner: LifecycleOwner): Unit = activityScope {
                 super.onCreate(owner)
 
+
+
                 // 启用全面屏沉浸
                 enableEdgeToEdge()
 
-                val flutterEngine = FlutterEngine(this)
+                val engineId = "ebkit_engine"
 
-                flutterEngine.dartExecutor.executeDartEntrypoint(
-                    DartExecutor.DartEntrypoint.createDefault()
-                )
+                // 初始化Flutter引擎
+                FlutterEngine(this@activityScope).let { engine ->
+                    engine.dartExecutor.executeDartEntrypoint(
+                        DartExecutor.DartEntrypoint.createDefault()
+                    )
+                    FlutterEngineCache.getInstance().put(engineId, engine)
+                }
 
-                FlutterEngineCache.getInstance().put("my_engine_id", flutterEngine)
 
                 mContentFrame.setOnTouchListener(delayHideTouchListener)
                 setContentView(view = getContentView, params = getFillMaxSize)
@@ -1936,6 +1929,10 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    enum class StateCardStyle {
+        Normal, NotInstalled,
+    }
+
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoilApi::class) // Material3
     private val mContent: IContent = object : IContent, ITheme by mTheme {
@@ -1969,8 +1966,10 @@ class MainActivity : BaseActivity() {
          */
         @Composable
         private fun ActivityMain() {
-            var visible by remember { mutableStateOf(value = true) }
             val inspection: Boolean = LocalInspectionMode.current
+            var appsLayerVisible by remember {
+                mutableStateOf(value = false)
+            }
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -1980,7 +1979,7 @@ class MainActivity : BaseActivity() {
                 ) {
                     MPScreen(
                         popBackStack = {
-                            visible = true
+                            appsLayerVisible = false
                         },
                     )
                     if (!inspection) AndroidView(
@@ -1990,18 +1989,22 @@ class MainActivity : BaseActivity() {
                 }
                 AnimatedVisibility(
                     modifier = Modifier.fillMaxSize(),
-                    visible = visible,
+                    visible = !appsLayerVisible,
                 ) {
                     NavigationRoot(
-                        showMPLayer = {
-                            visible = false
-                        })
+                        showAppsLayer = {
+                            appsLayerVisible = true
+                        },
+                    )
                 }
             }
         }
 
         @Composable
-        private fun NavigationRoot(modifier: Modifier = Modifier, showMPLayer: () -> Unit) {
+        private fun NavigationRoot(
+            modifier: Modifier = Modifier,
+            showAppsLayer: () -> Unit,
+        ) {
             val appDestination = arrayListOf(
                 AppDestination(
                     label = "Home",
@@ -2019,14 +2022,15 @@ class MainActivity : BaseActivity() {
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            val adaptiveInfo = currentWindowAdaptiveInfo()
-            val customNavSuiteType: NavigationSuiteType = with(adaptiveInfo) {
+            val customNavSuiteType: NavigationSuiteType = with(
+                receiver = currentWindowAdaptiveInfo(),
+            ) {
                 return@with when (windowSizeClass.windowWidthSizeClass) {
                     WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
                     WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
                     WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
                     else -> NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(
-                        adaptiveInfo
+                        adaptiveInfo = this@with
                     )
                 }
             }
@@ -2047,7 +2051,7 @@ class MainActivity : BaseActivity() {
                                     contentDescription = destination.label,
                                 )
                             },
-                            modifier = Modifier, enabled = true,
+                            modifier = Modifier.wrapContentSize(),
                             label = {
                                 Text(text = destination.label)
                             },
@@ -2066,13 +2070,10 @@ class MainActivity : BaseActivity() {
                                 }
                             },
                             alwaysShowLabel = false,
-                            badge = {
-                                Badge()
-                            },
                         )
                     }
                 },
-                modifier = modifier,
+                modifier = modifier.fillMaxSize(),
                 layoutType = customNavSuiteType,
             ) {
                 NavHost(
@@ -2083,12 +2084,16 @@ class MainActivity : BaseActivity() {
                     composable<MainActivity.Home> {
                         HomeDestination(
                             navController = navController,
-                            showMPLayer = showMPLayer,
+                            showAppsLayer = showAppsLayer,
                         )
                     }
                     composable<MainActivity.Settings> {
                         SettingsDestination()
                     }
+                    composable<Installer> {
+                        InstallerDestination(navController = navController)
+                    }
+
                 }
             }
         }
@@ -2097,37 +2102,37 @@ class MainActivity : BaseActivity() {
         private fun HomeDestination(
             modifier: Modifier = Modifier,
             navController: NavController,
-            showMPLayer: () -> Unit,
+            showAppsLayer: () -> Unit,
         ) {
 
             val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
-                rememberTopAppBarState()
+                state = rememberTopAppBarState()
             )
             var expanded: Boolean by remember {
-                mutableStateOf(false)
+                mutableStateOf(value = false)
             }
             val scroll = rememberScrollState()
             Scaffold(
                 modifier = modifier
                     .fillMaxSize()
                     .nestedScroll(
-                        connection = scrollBehavior.nestedScrollConnection
+                        connection = scrollBehavior.nestedScrollConnection,
                     ),
                 topBar = {
                     TopAppBar(
                         modifier = Modifier.fillMaxWidth(),
                         colors = TopAppBarDefaults.topAppBarColors(),
                         title = {
-                            Text("Home")
+                            Text(text = "EbKit")
                         },
                         actions = {
                             IconButton(
                                 onClick = {
-
+                                    navController.navigate(route = Installer)
                                 },
                             ) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.baseline_install_mobile_24),
+                                    imageVector = Icons.Filled.InstallMobile,
                                     contentDescription = null,
                                 )
                             }
@@ -2148,7 +2153,7 @@ class MainActivity : BaseActivity() {
                                 ) {
                                     DropdownMenuItem(
                                         text = {
-                                            Text("Settings")
+                                            Text(text = "Settings")
                                         },
                                         leadingIcon = {
                                             Icon(
@@ -2174,7 +2179,7 @@ class MainActivity : BaseActivity() {
                                     )
                                     DropdownMenuItem(
                                         text = {
-                                            Text("About")
+                                            Text(text = "About")
                                         },
                                         leadingIcon = {
                                             Icon(
@@ -2184,21 +2189,6 @@ class MainActivity : BaseActivity() {
                                         },
                                         onClick = {
                                             expanded = !expanded
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text("小程序")
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.KeyboardArrowDown,
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        onClick = {
-                                            expanded = !expanded
-                                            showMPLayer()
                                         },
                                     )
                                 }
@@ -2214,50 +2204,115 @@ class MainActivity : BaseActivity() {
                         .padding(paddingValues = innerPadding)
                         .verticalScroll(state = scroll),
                 ) {
-                    Card(
-                        modifier = Modifier.padding(
-                            start = 16.dp,end = 16.dp, top = 16.dp, bottom = 16.dp,
-                        ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(all = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                    StateCard(
+                        style = StateCardStyle.Normal,
+                        navToInstaller = {
+                            navController.navigate(
+                                route = Installer,
+                            ) {
+                                popUpTo(
+                                    id = navController.graph.findStartDestination().id,
+                                ) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        showAppsLayer = showAppsLayer,
+                    )
+
+                }
+            }
+        }
+
+        @Composable
+        private fun InstallerDestination(modifier: Modifier = Modifier, navController: NavController,) {
+            Scaffold(modifier = modifier.fillMaxSize(), topBar = {
+                TopAppBar(
+                    title = {
+                        Text(text = "Installer")
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                navController.popBackStack()
+                            },
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Error, contentDescription = null
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
                             )
-                            Column(
-                                modifier = Modifier
-                                    .weight(weight = 2f)
-                                    .padding(start = 16.dp)
-                            ) {
-                                Text(
-                                    text = "EcosedKit未安装",
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                Spacer(modifier = Modifier.height(height = 4.dp))
-                                Text(
-                                    text = "点此安装",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
-                            Button(
-                                onClick = {
-                                    showMPLayer()
-                                },
-                            ) {
-                                Text(text = "Apps")
-                            }
                         }
+                    },
+                )
+            }) { innerPadding ->
+                Box(modifier = Modifier.padding(paddingValues = innerPadding)) {
+
+                }
+            }
+        }
 
 
+        @Composable
+        private fun StateCard(
+            modifier: Modifier = Modifier,
+            style: StateCardStyle = StateCardStyle.Normal,
+            navToInstaller: () -> Unit,
+            showAppsLayer: () -> Unit,
+        ) {
+            Card(
+                onClick = {
+                    navToInstaller()
+                },
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 8.dp,
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            vertical = 12.dp,
+                            horizontal = 24.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Error,
+                        contentDescription = null,
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(weight = 2f)
+                            .padding(start = 16.dp)
+                    ) {
+                        Text(
+                            text = "EcosedKit未安装",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(modifier = Modifier.height(height = 4.dp))
+                        Text(
+                            text = "点此安装",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Button(
+                        onClick = showAppsLayer,
+                    ) {
+                        Text(text = "应用")
                     }
                 }
+
+
             }
         }
 
@@ -2412,7 +2467,7 @@ class MainActivity : BaseActivity() {
                     }
                     AppsGrid(
                         modifier = Modifier.padding(bottom = 16.dp),
-                        list = mineMiniProgramList,
+                        list = miniProgramList,
                     )
                 }
             }
@@ -2522,7 +2577,7 @@ class MainActivity : BaseActivity() {
                 actions = {
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
-                        text = "小程序",
+                        text = "应用",
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

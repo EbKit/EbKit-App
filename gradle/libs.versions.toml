@@ -2,7 +2,8 @@
 agp = "8.11.0"
 baseframework = "7.0.7"
 kotlin = "2.2.0"
-ksp = "2.1.21-2.0.1"
+ksp = "2.2.0-2.0.2"
+compose-destinations = "2.2.0"
 
 appcompat = "1.7.1"
 coreKtx = "1.16.0"
@@ -12,11 +13,12 @@ composeBom = "2025.06.01"
 compose = "1.8.3"
 material = "1.12.0"
 material3AdaptiveNavigationSuite = "1.3.2"
+materialIconsExtended = "1.7.8"
 navigationCompose = "2.9.1"
 
 kotlinxSerializationJson = "1.9.0"
 
-playServicesBase = "18.7.0"
+playServicesBase = "18.7.1"
 shizuku = "13.1.5"
 utilcodex = "1.31.1"
 hiddenapibypass = "6.1"
@@ -26,14 +28,30 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 desugar_jdk_libs = "2.1.5"
 
+
+koin = "4.1.0"
+
 [libraries]
+baseframework = { module = "com.github.kongzue:BaseFramework", version.ref = "baseframework" }
+hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
+shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
+shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
+utilcodex = { module = "com.blankj:utilcodex", version.ref = "utilcodex" }
+
+koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
+koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
+
+compose-destinations-core = { group = "io.github.raamcosta.compose-destinations", name = "core", version.ref = "compose-destinations" }
+compose-destinations-ksp = { group = "io.github.raamcosta.compose-destinations", name = "ksp", version.ref = "compose-destinations" }
+
+
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite", version.ref = "material3AdaptiveNavigationSuite" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
-baseframework = { module = "com.github.kongzue:BaseFramework", version.ref = "baseframework" }
-desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
-hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -50,17 +68,12 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 play-services-base = { module = "com.google.android.gms:play-services-base", version.ref = "playServicesBase" }
-shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
-shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
-utilcodex = { module = "com.blankj:utilcodex", version.ref = "utilcodex" }
 
-facebook-react-rngp = { group = "com.facebook.react", name = "react-native-gradle-plugin" }
-react-react = { group = "com.facebook.react", name = "react-android" }
-react-hermes = { group = "com.facebook.react", name = "hermes-android" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-facebook-react = { id = "com.facebook.react" }
+kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
