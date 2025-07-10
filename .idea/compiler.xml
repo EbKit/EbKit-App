@@ -14,8 +14,6 @@
       <module name="gradle-plugin-root.shared-testutil.test" target="11" />
       <module name="gradle-plugin-root.shared.main" target="11" />
       <module name="gradle-plugin-root.shared.test" target="11" />
-      <module name="gradle.main" target="11" />
-      <module name="gradle.test" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -280,7 +280,7 @@ class MainActivity : BaseActivity() {
     /** 胶囊圆角半径 */
     private var capsuleRadius = 20.toDp.toFloat()
 
-    /* 是否显示调试信息 **/
+    /** 是否显示调试信息 */
     private val show: Boolean = BuildConfig.DEBUG
 
 
