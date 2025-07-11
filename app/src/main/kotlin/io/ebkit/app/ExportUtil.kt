@@ -30,8 +30,8 @@ internal object EbEntry : IEntry, KoinComponent {
     /** 核心 */
     private val core: EbKitCore by inject<EbKitCore>()
 
-    /** 上下文 */
-    private val context by inject<Context>()
+    /** 上下文(Application上下文) */
+    private val context: Context by inject<Context>()
 
     private val createInstance = object : CreateScope {
 

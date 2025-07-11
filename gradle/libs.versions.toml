@@ -1,9 +1,7 @@
 [versions]
-agp = "8.11.0"
-baseframework = "7.0.7"
+agp = "8.11.1"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
-compose-destinations = "2.2.0"
 
 appcompat = "1.7.1"
 coreKtx = "1.16.0"
@@ -18,18 +16,18 @@ navigationCompose = "2.9.1"
 
 kotlinxSerializationJson = "1.9.0"
 
-playServicesBase = "18.7.1"
-shizuku = "13.1.5"
-utilcodex = "1.31.1"
-hiddenapibypass = "6.1"
-
+playServicesBase = "18.7.2"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 desugar_jdk_libs = "2.1.5"
 
-
+baseframework = "7.0.7"
+compose-destinations = "2.2.0"
 koin = "4.1.0"
+shizuku = "13.1.5"
+utilcodex = "1.31.1"
+hiddenapibypass = "6.1"
 
 [libraries]
 baseframework = { module = "com.github.kongzue:BaseFramework", version.ref = "baseframework" }
