@@ -1555,6 +1555,9 @@ class MainActivity : BaseActivity() {
 
                 mContentFrame.setOnTouchListener(delayHideTouchListener)
                 setContentView(view = getContentView, params = getFillMaxSize)
+
+                EbKitPlatform.instance = EbKitImpl()
+                EbKitPlatform.instance.testFun()
             }
 
             /**

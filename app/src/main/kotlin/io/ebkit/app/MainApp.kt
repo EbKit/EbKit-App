@@ -15,15 +15,7 @@ class MainApp : BaseApp<MainApp>(), KoinComponent {
         startKoin {
             androidLogger()
             androidContext(androidContext = this@MainApp)
-            modules(
-                modules = module(
-                    createdAtStart = true,
-                ) {
-                    single<EbKitCore> {
-                        EbKitCore()
-                    }
-                }
-            )
+            modules(modules = coreModule)
             modules(modules = module { single { this@MainApp } })
         }
     }

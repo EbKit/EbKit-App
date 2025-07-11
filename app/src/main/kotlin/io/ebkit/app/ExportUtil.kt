@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 
 @DslMarker
 internal annotation class ScopeMarker
