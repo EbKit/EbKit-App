@@ -46,6 +46,9 @@ android {
 
 dependencies {
     implementation("com.google.accompanist:accompanist-coil:0.15.0")
+    implementation("com.google.accompanist:accompanist-drawablepainter:0.37.3")
+
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
 
     // Flutter
     implementation(project(":flutter"))
