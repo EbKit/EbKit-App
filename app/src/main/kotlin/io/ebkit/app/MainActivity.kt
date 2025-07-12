@@ -2933,7 +2933,7 @@ class MainActivity : BaseActivity() {
                         style = AppItemStyle.Image,
                         appIcon = rememberImagePainter(
                             data = AppCompatResources.getDrawable(
-                                LocalContext.current, R.mipmap.ic_launcher
+                                LocalContext.current, R.mipmap.ic_ebkit
                             ),
                         ),
                         appName = "音乐",
