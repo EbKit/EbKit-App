@@ -1039,11 +1039,9 @@ class MainActivity : BaseActivity() {
             return@lazy FrameLayout(this@MainActivity)
         }
 
-        override val getContentView: AbstractComposeView
-            get() = mHybridCompose
+        override val getContentView: AbstractComposeView get() = mHybridCompose
 
-        override val getOverlayView: FrameLayout
-            get() = mComposeOverlay
+        override val getOverlayView: FrameLayout get() = mComposeOverlay
 
         override val getToolbarView: MaterialToolbar by lazy {
             return@lazy MaterialToolbar(this@MainActivity)
