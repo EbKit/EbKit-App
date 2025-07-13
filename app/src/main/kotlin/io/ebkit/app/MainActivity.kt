@@ -26,6 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
@@ -35,7 +36,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,9 +67,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FlutterDash
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Error
@@ -115,7 +115,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -127,7 +126,6 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -179,9 +177,6 @@ import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import java.security.MessageDigest
 import kotlin.math.pow
@@ -670,8 +665,8 @@ class MainActivity : BaseActivity() {
         val getMenuButton: View
         val getCloseButton: View
 
-        val getFillMaxSize: ViewGroup.LayoutParams
-        val getWrapContentSize: ViewGroup.LayoutParams
+        val fillMaxSize: ViewGroup.LayoutParams
+        val wrapContentSize: ViewGroup.LayoutParams
     }
 
     private interface IBackPressHandler {
@@ -1076,14 +1071,14 @@ class MainActivity : BaseActivity() {
             return@lazy AppCompatImageButton(this@MainActivity)
         }
 
-        override val getFillMaxSize: ViewGroup.LayoutParams by lazy {
+        override val fillMaxSize: ViewGroup.LayoutParams by lazy {
             return@lazy FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
             )
         }
 
-        override val getWrapContentSize: ViewGroup.LayoutParams by lazy {
+        override val wrapContentSize: ViewGroup.LayoutParams by lazy {
             return@lazy FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -1622,10 +1617,10 @@ class MainActivity : BaseActivity() {
                 super.onCreate(owner)
                 DynamicColors.applyToActivitiesIfAvailable(application)
 
-                startKoin {
-                    androidLogger()
-                    androidContext(androidContext = applicationContext)
-                }
+//                startKoin {
+//                    androidLogger()
+//                    androidContext(androidContext = applicationContext)
+//                }
 
                 // 启用全面屏沉浸
                 enableEdgeToEdge()
@@ -1657,7 +1652,7 @@ class MainActivity : BaseActivity() {
                 }
 
                 getContentFrame.setOnTouchListener(delayHideTouchListener)
-                getContentFrame.addView(getContentView, getFillMaxSize)
+                getContentFrame.addView(getContentView, fillMaxSize)
             }
 
             /**
@@ -1765,8 +1760,8 @@ class MainActivity : BaseActivity() {
                     return@setOnApplyWindowInsetsListener insets // 保持事件传递（不影响 Compose）
                 } // 启用窗口插入监听（兼容 API 24+）
                 ViewCompat.requestApplyInsets(this) // 初始请求插入计算
-                addView(getMenuButton, getWrapContentSize) // 添加菜单按钮
-                addView(getCloseButton, getWrapContentSize) // 添加关闭按钮
+                addView(getMenuButton, wrapContentSize) // 添加菜单按钮
+                addView(getCloseButton, wrapContentSize) // 添加关闭按钮
                 setWillNotDraw(false) // 启用内容绘制
             }
 
@@ -2029,8 +2024,9 @@ class MainActivity : BaseActivity() {
          */
         @Composable
         private fun rememberCapsulePadding(): PaddingValues {
+            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
             return PaddingValues(
-                end = if (!LocalInspectionMode.current) {
+                end = if (isAct) {
                     with(receiver = LocalDensity.current) {
                         return@with getActionPadding.toDp()
                     }
@@ -2040,8 +2036,9 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun OverlayView(modifier: Modifier = Modifier) {
+            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
             val inspection: Boolean = LocalInspectionMode.current
-            if (!inspection) {
+            if (isAct) {
                 AndroidView(
                     factory = { mViewFactory.getOverlayView },
                     modifier = modifier.fillMaxSize(),
@@ -2059,7 +2056,9 @@ class MainActivity : BaseActivity() {
         @Composable
         private fun ToolbarView(modifier: Modifier = Modifier) {
             val inspection: Boolean = LocalInspectionMode.current
-            if (!inspection) {
+
+            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
+            if (isAct) {
                 AndroidView(
                     factory = { mViewFactory.getToolbarView },
                     modifier = modifier,
@@ -2075,19 +2074,38 @@ class MainActivity : BaseActivity() {
         }
 
         @Composable
-        private fun FlutterView(modifier: Modifier = Modifier) {
-            val inspection: Boolean = LocalInspectionMode.current
-            if (!inspection) {
-                AndroidView(
-                    factory = { mViewFactory.getFlutterView },
-                    modifier = modifier.fillMaxSize(),
-                )
-            } else {
-                Box(
-                    modifier = modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
+        private fun FlutterSurface(modifier: Modifier = Modifier) {
+            val isInspectionMode = LocalInspectionMode.current
+            val isNormalMode = LocalActivity.current?.javaClass == MainActivity::class.java
+            Surface(
+                modifier = modifier.fillMaxSize(),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                when {
+                    isNormalMode -> AndroidView(
+                        factory = { mViewFactory.getFlutterView },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(shape = MaterialTheme.shapes.medium),
+                    )
 
+                    isInspectionMode -> Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(shape = MaterialTheme.shapes.medium),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "Flutter 在 InspectionMode 中不可用")
+                    }
+
+                    else -> Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(shape = MaterialTheme.shapes.medium),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(text = "Flutter 在当前模式中不可用")
+                    }
                 }
             }
         }
@@ -2548,9 +2566,6 @@ class MainActivity : BaseActivity() {
                     .fillMaxSize()
                     .verticalScroll(state = scrollState),
             ) {
-                Button(onClick = animateToFlutter) {
-                    Text("flutter")
-                }
                 Box(
                     modifier = Modifier.padding(
                         start = 30.dp,
@@ -2566,7 +2581,7 @@ class MainActivity : BaseActivity() {
                         ),
                     )
                 }
-                MPPlayer()
+                MPPlayer(animateToFlutter = animateToFlutter)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2661,8 +2676,8 @@ class MainActivity : BaseActivity() {
                         title = {
                             ToolbarView(
                                 modifier = Modifier
-                                   .fillMaxWidth()
-                                   .wrapContentHeight(),
+                                    .fillMaxWidth()
+                                    .wrapContentHeight(),
                             )
                         },
                         modifier = Modifier
@@ -2689,23 +2704,14 @@ class MainActivity : BaseActivity() {
                         ),
                     )
                 }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 8.dp,
-                            bottom = 16.dp,
-                        ),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    FlutterView(
-                        modifier = Modifier.clip(
-                            shape = MaterialTheme.shapes.medium,
-                        ),
+                FlutterSurface(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 8.dp,
+                        bottom = 16.dp,
                     )
-                }
+                )
             }
         }
 
@@ -2823,8 +2829,8 @@ class MainActivity : BaseActivity() {
                 floatingActionButton = {
                     ExtendedFloatingActionButton(
                         text = {
-                        Text("Back")
-                    },
+                            Text("Back")
+                        },
                         icon = {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -2914,7 +2920,10 @@ class MainActivity : BaseActivity() {
         }
 
         @Composable
-        private fun MPPlayer(modifier: Modifier = Modifier) {
+        private fun MPPlayer(
+            modifier: Modifier = Modifier,
+            animateToFlutter: () -> Unit,
+        ) {
             Row(
                 modifier = modifier
                     .fillMaxWidth()
@@ -2933,30 +2942,40 @@ class MainActivity : BaseActivity() {
                         style = AppItemStyle.Image,
                         appIcon = rememberImagePainter(
                             data = AppCompatResources.getDrawable(
-                                LocalContext.current, R.mipmap.ic_ebkit
+                                LocalContext.current,
+                                R.mipmap.ic_ecosedkit,
                             ),
                         ),
-                        appName = "音乐",
+                        appName = "EKit",
                     )
                     AppItem(
                         modifier = Modifier
                             .weight(weight = 1f)
                             .fillMaxSize(),
-                        style = AppItemStyle.Icon,
-                        appIcon = painterResource(id = R.drawable.icon_audio),
-                        appName = "音频",
+                        style = AppItemStyle.Image,
+                        appIcon = rememberImagePainter(
+                            data = AppCompatResources.getDrawable(
+                                LocalContext.current,
+                                R.mipmap.ic_ebkit,
+                            ),
+                        ),
+                        appName = "EbKit",
                     )
                 }
                 RecentPlayer(
                     modifier = Modifier
                         .weight(weight = 1f)
                         .fillMaxSize(),
+                    animateToFlutter = animateToFlutter,
                 )
             }
         }
 
         @Composable
-        private fun RecentPlayer(modifier: Modifier = Modifier) {
+        private fun RecentPlayer(
+            modifier: Modifier = Modifier,
+            animateToFlutter: () -> Unit,
+        ) {
             val textState = remember { mutableStateOf(value = TextFieldValue()) }
             Column(
                 modifier = modifier.wrapContentSize(),
@@ -2968,7 +2987,7 @@ class MainActivity : BaseActivity() {
                 ) {
                     BasicTextField(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .height(height = 60.dp)
                             .padding(start = 10.dp),
                         enabled = false,
@@ -2985,17 +3004,20 @@ class MainActivity : BaseActivity() {
                                     .fillMaxSize()
                                     .clip(shape = RoundedCornerShape(size = 40.dp))
                                     .background(Color(color = 0xff434056))
-                                    .padding(start = 6.dp),
-                                contentAlignment = Alignment.CenterStart
+                                    .padding(start = 6.dp)
+                                    .clickable(onClick = animateToFlutter),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.PlayArrow,
+                                        imageVector = Icons.Filled.FlutterDash,
                                         contentDescription = null,
-                                        modifier = Modifier.size(size = 30.dp),
+                                        modifier = Modifier
+                                            .padding(start = 10.dp)
+                                            .size(size = 30.dp),
                                         tint = Color(color = 0xff8E8E9E)
                                     )
                                     Box(
@@ -3006,6 +3028,7 @@ class MainActivity : BaseActivity() {
                                     ) {
                                         Text(
                                             text = "暂无内容",
+                                            modifier = Modifier.wrapContentSize(),
                                             fontSize = 16.sp,
                                             color = Color(color = 0xff8E8E9E),
                                             textAlign = TextAlign.Center,
@@ -3018,7 +3041,7 @@ class MainActivity : BaseActivity() {
                     )
                 }
                 Text(
-                    text = "最近播放",
+                    text = "Flutter",
                     fontSize = 15.sp,
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -3770,7 +3793,7 @@ class MainActivity : BaseActivity() {
     private fun ByteArray.digest(algorithm: String): ByteArray =
         MessageDigest.getInstance(algorithm).digest(this)
 
-    private fun PackageInfo.getSignature(): String?{
+    private fun PackageInfo.getSignature(): String? {
         val apkSigners = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             this@getSignature.signingInfo?.apkContentsSigners
         } else {
