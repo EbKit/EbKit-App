@@ -21,16 +21,19 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatImageButton
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -39,9 +42,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -66,6 +71,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FlutterDash
 import androidx.compose.material.icons.filled.Home
@@ -126,6 +133,7 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -2030,66 +2038,108 @@ class MainActivity : BaseActivity() {
                     with(receiver = LocalDensity.current) {
                         return@with getActionPadding.toDp()
                     }
-                } else 0.dp,
+                } else {
+                    0.dp
+                },
             )
         }
 
         @Composable
-        private fun OverlayView(modifier: Modifier = Modifier) {
-            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
-            val inspection: Boolean = LocalInspectionMode.current
-            if (isAct) {
-                AndroidView(
-                    factory = { mViewFactory.getOverlayView },
-                    modifier = modifier.fillMaxSize(),
-                )
-            } else {
-                Box(
-                    modifier = modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
+        private fun ViewFactory(
+            modifier: Modifier = Modifier,
+            factory: IViewFactory.() -> View,
+        ) {
+            val currentActivity: Activity? = LocalActivity.current
+            AndroidView(
+                factory = { context ->
+                    when (currentActivity?.javaClass) {
+                        MainActivity::class.java -> mViewFactory.factory()
+                        else -> View(context)
+                    }
+                },
+                modifier = modifier,
+            )
+        }
 
+        @Composable
+        private fun OverlayLayer(
+            modifier: Modifier = Modifier,
+            content: @Composable BoxScope.() -> Unit,
+        ) {
+            Box(modifier = modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    content = content,
+                )
+                when {
+                    LocalInspectionMode.current -> Box(
+                        modifier = modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+
+                    }
+
+                    else -> ViewFactory(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { getOverlayView }
+                    )
                 }
             }
         }
 
         @Composable
-        private fun ToolbarView(modifier: Modifier = Modifier) {
-            val inspection: Boolean = LocalInspectionMode.current
-
-            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
-            if (isAct) {
-                AndroidView(
-                    factory = { mViewFactory.getToolbarView },
-                    modifier = modifier,
+        private fun ActionBar(
+            modifier: Modifier = Modifier,
+            title: (@Composable () -> Unit)? = null,
+            navigationIcon: @Composable () -> Unit = {},
+            actions: @Composable RowScope.() -> Unit = {},
+        ) {
+            Surface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+                TopAppBar(
+                    title = {
+                        when {
+                            title != null -> title()
+                            LocalInspectionMode.current -> Text(text = "ActionBar")
+                            else -> ViewFactory(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight(),
+                                factory = { getToolbarView },
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    navigationIcon = navigationIcon,
+                    actions = actions,
+                    windowInsets = WindowInsets(
+                        left = 0.dp,
+                        top = 0.dp,
+                        right = 0.dp,
+                        bottom = 0.dp,
+                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
                 )
-            } else {
-                Box(
-                    modifier = modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-
-                }
             }
         }
 
         @Composable
-        private fun FlutterSurface(modifier: Modifier = Modifier) {
-            val isInspectionMode = LocalInspectionMode.current
-            val isNormalMode = LocalActivity.current?.javaClass == MainActivity::class.java
+        private fun Flutter(modifier: Modifier = Modifier) {
             Surface(
                 modifier = modifier.fillMaxSize(),
                 shape = MaterialTheme.shapes.medium,
             ) {
                 when {
-                    isNormalMode -> AndroidView(
-                        factory = { mViewFactory.getFlutterView },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(shape = MaterialTheme.shapes.medium),
-                    )
-
-                    isInspectionMode -> Box(
+                    LocalInspectionMode.current -> Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(shape = MaterialTheme.shapes.medium),
@@ -2098,14 +2148,12 @@ class MainActivity : BaseActivity() {
                         Text(text = "Flutter 在 InspectionMode 中不可用")
                     }
 
-                    else -> Box(
+                    else -> ViewFactory(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(shape = MaterialTheme.shapes.medium),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "Flutter 在当前模式中不可用")
-                    }
+                        factory = { getFlutterView },
+                    )
                 }
             }
         }
@@ -2125,7 +2173,6 @@ class MainActivity : BaseActivity() {
          */
         @Composable
         private fun ActivityMain() {
-
             var appsLayerVisible by remember {
                 mutableStateOf(value = false)
             }
@@ -2133,15 +2180,12 @@ class MainActivity : BaseActivity() {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
+                OverlayLayer {
                     MPScreen(
                         popBackStack = {
                             appsLayerVisible = false
                         },
                     )
-                    OverlayView()
                 }
                 AnimatedVisibility(
                     modifier = Modifier.fillMaxSize(),
@@ -2277,9 +2321,8 @@ class MainActivity : BaseActivity() {
                 topBar = {
                     TopAppBar(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = TopAppBarDefaults.topAppBarColors(),
                         title = {
-                            Text(text = "EbKit")
+                            Text(text = stringResource(id = R.string.app_name))
                         },
                         actions = {
                             IconButton(
@@ -2543,7 +2586,7 @@ class MainActivity : BaseActivity() {
                             },
                         )
 
-                        1 -> MPFlutterPage(
+                        1 -> FlutterPage(
                             animateToApps = {
                                 coroutineScope.launch {
                                     pageState.animateScrollToPage(page = 0)
@@ -2566,6 +2609,27 @@ class MainActivity : BaseActivity() {
                     .fillMaxSize()
                     .verticalScroll(state = scrollState),
             ) {
+                ActionBar(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        top = 16.dp,
+                        end = 16.dp,
+                        bottom = 8.dp
+                    ),
+                    title = {
+                        Text("Apps")
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = animateToFlutter
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                )
                 Box(
                     modifier = Modifier.padding(
                         start = 30.dp,
@@ -2654,57 +2718,28 @@ class MainActivity : BaseActivity() {
         }
 
         @Composable
-        private fun MPFlutterPage(
+        private fun FlutterPage(
             modifier: Modifier = Modifier,
             animateToApps: () -> Unit,
         ) {
             Column(modifier = modifier.fillMaxSize()) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 16.dp,
-                            bottom = 8.dp,
-                        ),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                ) {
-                    TopAppBar(
-                        title = {
-                            ToolbarView(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
+                ActionBar(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 8.dp,
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = animateToApps) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
                             )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        navigationIcon = {
-                            IconButton(
-                                onClick = animateToApps,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = null,
-                                )
-                            }
-                        },
-                        windowInsets = WindowInsets(
-                            left = 0.dp,
-                            top = 0.dp,
-                            right = 0.dp,
-                            bottom = 0.dp,
-                        ),
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                        ),
-                    )
-                }
-                FlutterSurface(
+                        }
+                    }
+                )
+                Flutter(
                     modifier = Modifier.padding(
                         start = 16.dp,
                         end = 16.dp,
@@ -2724,67 +2759,59 @@ class MainActivity : BaseActivity() {
                     modifier = Modifier.fillMaxWidth(),
                     title = {
                         Text(
-                            text = "最近",
+                            text = "应用",
                             fontSize = 16.sp,
                             color = Color.White,
                             textAlign = TextAlign.Center,
                         )
                     },
                     navigationIcon = {
-                        Box(
+                        BasicTextField(
+                            value = textState.value,
+                            onValueChange = { value ->
+                                textState.value = value
+                            },
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .wrapContentWidth(),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            BasicTextField(
-                                enabled = false,
-                                value = textState.value,
-                                onValueChange = { value ->
-                                    textState.value = value
-                                },
-                                textStyle = TextStyle(
-                                    fontSize = 16.sp
-                                ),
+                                .padding(start = 16.dp)
+                                .width(width = 87.dp)
+                                .height(height = 32.dp),
+                            enabled = false,
+                            textStyle = TextStyle(
+                                fontSize = 16.sp
+                            ),
+                        ) { innerTextField ->
+                            Box(
                                 modifier = Modifier
-                                    .width(width = 87.dp)
-                                    .height(height = 32.dp)
-                                    .padding(start = 16.dp),
-                                decorationBox = { innerTextField ->
+                                    .fillMaxSize()
+                                    .clip(shape = RoundedCornerShape(size = 20.dp))
+                                    .background(Color(color = 0xff434056))
+                                    .padding(start = 6.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(size = 20.dp),
+                                        tint = Color(color = 0xff8E8E9E)
+                                    )
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(shape = RoundedCornerShape(size = 20.dp))
-                                            .background(Color(color = 0xff434056))
-                                            .padding(start = 6.dp),
-                                        contentAlignment = Alignment.CenterStart
+                                        modifier = Modifier.wrapContentSize(),
+                                        contentAlignment = Alignment.CenterStart,
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxSize(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Search,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(size = 20.dp),
-                                                tint = Color(color = 0xff8E8E9E)
-                                            )
-                                            Box(
-                                                modifier = Modifier.wrapContentSize(),
-                                                contentAlignment = Alignment.CenterStart,
-                                            ) {
-                                                Text(
-                                                    text = "搜索",
-                                                    fontSize = 13.sp,
-                                                    color = Color(color = 0xff8E8E9E),
-                                                    textAlign = TextAlign.Center,
-                                                )
-                                                innerTextField()
-                                            }
-                                        }
+                                        Text(
+                                            text = "搜索",
+                                            fontSize = 13.sp,
+                                            color = Color(color = 0xff8E8E9E),
+                                            textAlign = TextAlign.Center,
+                                        )
+                                        innerTextField()
                                     }
-                                },
-                            )
+                                }
+                            }
                         }
                     },
                     actions = {
@@ -2819,7 +2846,7 @@ class MainActivity : BaseActivity() {
                 actions = {
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
-                        text = "应用",
+                        text = stringResource(id = R.string.app_name),
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
