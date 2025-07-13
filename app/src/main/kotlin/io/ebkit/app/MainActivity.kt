@@ -21,19 +21,16 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.util.TypedValue
-import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatImageButton
-import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.Toolbar
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -59,7 +56,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -67,12 +63,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FlutterDash
 import androidx.compose.material.icons.filled.Home
@@ -137,11 +131,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -281,20 +276,11 @@ class MainActivity : BaseActivity() {
     }
 
 
-    /** 胶囊宽度 */
-    private val capsuleWidth = 87.toDp
-
-    /** 胶囊高度 */
-    private val capsuleHeight = 32.toDp
-
-    /** 胶囊又边距 */
-    private val capsuleRightPadding = 16.toDp
-
     /** 胶囊顶部边距 */
-    private val capsuleTopPadding = ((65.toDp) - capsuleHeight) / 2
+    private val capsuleTopPadding get() = ((actionBarHeight.toDp) - capsuleHeight.toDp) / 2
 
-    /** 胶囊圆角半径 */
-    private var capsuleRadius = 20.toDp.toFloat()
+
+    private val actionBarHeight: Int = 65
 
     /** 是否显示调试信息 */
     private val show: Boolean = BuildConfig.DEBUG
@@ -665,13 +651,13 @@ class MainActivity : BaseActivity() {
 
 
     private interface IViewFactory {
-        val getContentFrame: ViewGroup
-        val getContentView: View
-        val getOverlayView: View
-        val getToolbarView: View
-        val getFlutterView: View
-        val getMenuButton: View
-        val getCloseButton: View
+        val getContentFrame: FrameLayout
+        val getContentView: AbstractComposeView
+        val getOverlayView: FrameLayout
+        val getToolbarView: MaterialToolbar
+        val getFlutterView: ViewPager2
+        val getMenuButton: AppCompatImageButton
+        val getCloseButton: AppCompatImageButton
 
         val fillMaxSize: ViewGroup.LayoutParams
         val wrapContentSize: ViewGroup.LayoutParams
@@ -1049,33 +1035,29 @@ class MainActivity : BaseActivity() {
 
     private val mViewFactory: IViewFactory = object : IViewFactory {
 
-        override val getContentFrame: ViewGroup by lazy {
+        override val getContentFrame: FrameLayout by lazy {
             return@lazy FrameLayout(this@MainActivity)
         }
 
-        override val getContentView: View
+        override val getContentView: AbstractComposeView
             get() = mHybridCompose
 
-        override val getOverlayView: View
+        override val getOverlayView: FrameLayout
             get() = mComposeOverlay
 
-        override val getToolbarView: View
-            get() = MaterialToolbar(this@MainActivity).apply {
-                setSupportActionBar(this@apply)
-            }
-
-        override val getFlutterView: View by lazy {
-            return@lazy ViewPager2(this@MainActivity).apply {
-                isUserInputEnabled = false
-                adapter = mFlutterAdapter
-            }
+        override val getToolbarView: MaterialToolbar by lazy {
+            return@lazy MaterialToolbar(this@MainActivity)
         }
 
-        override val getMenuButton: View by lazy {
+        override val getFlutterView: ViewPager2 by lazy {
+            return@lazy ViewPager2(this@MainActivity)
+        }
+
+        override val getMenuButton: AppCompatImageButton by lazy {
             return@lazy AppCompatImageButton(this@MainActivity)
         }
 
-        override val getCloseButton: View by lazy {
+        override val getCloseButton: AppCompatImageButton by lazy {
             return@lazy AppCompatImageButton(this@MainActivity)
         }
 
@@ -1633,6 +1615,16 @@ class MainActivity : BaseActivity() {
                 // 启用全面屏沉浸
                 enableEdgeToEdge()
 
+                getToolbarView.apply {
+                    setSupportActionBar(this@apply)
+                    setLogo(R.drawable.baseline_flutter_dash_24)
+                }
+
+                getFlutterView.apply {
+                    isUserInputEnabled = false
+                    adapter = mFlutterAdapter
+                }
+
                 // 初始化Flutter引擎
                 FlutterEngine(this@activityScope).let { engine ->
                     engine.dartExecutor.executeDartEntrypoint(
@@ -1714,7 +1706,7 @@ class MainActivity : BaseActivity() {
      */
 
     /** Compose Hybrid  */
-    private val mHybridCompose: View by lazy {
+    private val mHybridCompose: AbstractComposeView by lazy {
         return@lazy object : AbstractComposeView(
             context = this@MainActivity,
         ), IContent by mContent {
@@ -1744,7 +1736,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private val mComposeOverlay: View by lazy {
+    private val mComposeOverlay: FrameLayout by lazy {
         return@lazy object : FrameLayout(
             this@MainActivity,
         ), IBackPressHandler by mBackPressHandler, IViewFactory by mViewFactory {
@@ -1841,19 +1833,19 @@ class MainActivity : BaseActivity() {
                                 getChildAt(index).layout(
                                     // 按钮的左侧坐标
                                     // 视图宽度 - 视图右边距 - 胶囊按钮右边距 - 胶囊按钮宽度 + 左侧偏移量
-                                    viewWidth - paddingRight - capsuleRightPadding - capsuleWidth + leftOffset,
+                                    viewWidth - paddingRight - capsuleRightPadding.toDp - capsuleWidth.toDp + leftOffset,
                                     // 按钮的顶部坐标
                                     // 胶囊按钮顶部边距 + 视图顶部边距
                                     capsuleTopPadding + paddingTop,
                                     // 按钮的右侧坐标
                                     // 视图宽度 - 视图右边距 - 胶囊按钮右边距 - 胶囊按钮宽度 + 左侧偏移量 + 胶囊按钮宽度的一半
-                                    viewWidth - paddingRight - capsuleRightPadding - capsuleWidth + leftOffset + capsuleWidth / 2,
+                                    viewWidth - paddingRight - capsuleRightPadding.toDp - capsuleWidth.toDp + leftOffset + capsuleWidth.toDp / 2,
                                     // 按钮的底部坐标
                                     // 胶囊按钮顶部边距 + 胶囊按钮高度 + 视图顶部边距
-                                    capsuleTopPadding + capsuleHeight + paddingTop,
+                                    capsuleTopPadding + capsuleHeight.toDp + paddingTop,
                                 )
                                 // 更新下一个按钮的起始位置
-                                leftOffset += capsuleWidth / 2
+                                leftOffset += capsuleWidth.toDp / 2
                             }
                             // 跳出循环,拒绝其他子视图布局
                             else -> continue
@@ -2031,16 +2023,17 @@ class MainActivity : BaseActivity() {
          * 获取胶囊按钮右填充
          */
         @Composable
-        private fun rememberCapsulePadding(): PaddingValues {
-            val isAct = LocalActivity.current?.javaClass == MainActivity::class.java
+        private fun rememberCapsulePadding(excess: Dp = 0.dp): PaddingValues {
+            val activity: Activity? = LocalActivity.current
+            val density: Density = LocalDensity.current
             return PaddingValues(
-                end = if (isAct) {
-                    with(receiver = LocalDensity.current) {
-                        return@with getActionPadding.toDp()
+                end = when (activity?.javaClass) {
+                    MainActivity::class.java -> with(receiver = density) {
+                        getActionPadding().toDp() - excess
                     }
-                } else {
-                    0.dp
-                },
+
+                    else -> 0.dp
+                }
             )
         }
 
@@ -2752,9 +2745,9 @@ class MainActivity : BaseActivity() {
 
         @Composable
         private fun MPTopBar(modifier: Modifier = Modifier) {
-            val capsulePadding: PaddingValues = rememberCapsulePadding()
-            val textState = remember { mutableStateOf(value = TextFieldValue()) }
-            Column(modifier = modifier.fillMaxWidth()) {
+            Column(
+                modifier = modifier.fillMaxWidth(),
+            ) {
                 CenterAlignedTopAppBar(
                     modifier = Modifier.fillMaxWidth(),
                     title = {
@@ -2766,58 +2759,44 @@ class MainActivity : BaseActivity() {
                         )
                     },
                     navigationIcon = {
-                        BasicTextField(
-                            value = textState.value,
-                            onValueChange = { value ->
-                                textState.value = value
-                            },
+                        Box(
                             modifier = Modifier
-                                .padding(start = 16.dp)
+                                .padding(start = 12.dp) // TopAppBar 自带 4dp 左边距
                                 .width(width = 87.dp)
-                                .height(height = 32.dp),
-                            enabled = false,
-                            textStyle = TextStyle(
-                                fontSize = 16.sp
-                            ),
-                        ) { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(shape = RoundedCornerShape(size = 20.dp))
-                                    .background(Color(color = 0xff434056))
-                                    .padding(start = 6.dp),
-                                contentAlignment = Alignment.CenterStart
+                                .height(height = 32.dp)
+                                .clip(shape = RoundedCornerShape(size = 20.dp))
+                                .background(Color(color = 0xff434056))
+                                .clickable(onClick = {}),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Row(
+                                modifier = Modifier.wrapContentSize(),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Search,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(size = 20.dp),
-                                        tint = Color(color = 0xff8E8E9E)
-                                    )
-                                    Box(
-                                        modifier = Modifier.wrapContentSize(),
-                                        contentAlignment = Alignment.CenterStart,
-                                    ) {
-                                        Text(
-                                            text = "搜索",
-                                            fontSize = 13.sp,
-                                            color = Color(color = 0xff8E8E9E),
-                                            textAlign = TextAlign.Center,
-                                        )
-                                        innerTextField()
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(size = 20.dp),
+                                    tint = Color(color = 0xff8E8E9E)
+                                )
+                                Text(
+                                    text = "搜索",
+                                    modifier = Modifier
+                                        .wrapContentSize()
+                                        .padding(start = 6.dp),
+                                    fontSize = 13.sp,
+                                    color = Color(color = 0xff8E8E9E),
+                                    textAlign = TextAlign.Center,
+                                )
                             }
                         }
                     },
                     actions = {
                         Spacer(
                             modifier = Modifier.padding(
-                                paddingValues = capsulePadding,
+                                paddingValues = rememberCapsulePadding(
+                                    excess = 4.dp // TopAppBar 自带 4dp 右边距
+                                ),
                             ),
                         )
                     },
@@ -2842,7 +2821,12 @@ class MainActivity : BaseActivity() {
                 modifier = modifier
                     .fillMaxWidth()
                     .fillMaxWidth()
-                    .clip(shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
+                    .clip(
+                        shape = RoundedCornerShape(
+                            topStart = 10.dp,
+                            topEnd = 10.dp
+                        ),
+                    ),
                 actions = {
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
@@ -2850,13 +2834,13 @@ class MainActivity : BaseActivity() {
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color.White
+                        color = Color.White,
                     )
                 },
                 floatingActionButton = {
                     ExtendedFloatingActionButton(
                         text = {
-                            Text("Back")
+                            Text(text = "Back")
                         },
                         icon = {
                             Icon(
@@ -3003,69 +2987,41 @@ class MainActivity : BaseActivity() {
             modifier: Modifier = Modifier,
             animateToFlutter: () -> Unit,
         ) {
-            val textState = remember { mutableStateOf(value = TextFieldValue()) }
             Column(
-                modifier = modifier.wrapContentSize(),
+                modifier = modifier
+                    .padding(start = 16.dp)
+                    .wrapContentSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier.height(height = 60.dp),
-                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .height(height = 60.dp)
+                        .fillMaxWidth()
+                        .clip(shape = RoundedCornerShape(size = 40.dp))
+                        .background(Color(color = 0xFF434056))
+                        .clickable(onClick = animateToFlutter),
+                    contentAlignment = Alignment.Center
                 ) {
-                    BasicTextField(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .height(height = 60.dp)
-                            .padding(start = 10.dp),
-                        enabled = false,
-                        value = textState.value,
-                        onValueChange = {
-                            textState.value = it
-                        },
-                        textStyle = TextStyle(
-                            fontSize = 16.sp
-                        ),
-                        decorationBox = { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(shape = RoundedCornerShape(size = 40.dp))
-                                    .background(Color(color = 0xff434056))
-                                    .padding(start = 6.dp)
-                                    .clickable(onClick = animateToFlutter),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.FlutterDash,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .padding(start = 10.dp)
-                                            .size(size = 30.dp),
-                                        tint = Color(color = 0xff8E8E9E)
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .padding(start = 10.dp),
-                                        contentAlignment = Alignment.CenterStart,
-                                    ) {
-                                        Text(
-                                            text = "暂无内容",
-                                            modifier = Modifier.wrapContentSize(),
-                                            fontSize = 16.sp,
-                                            color = Color(color = 0xff8E8E9E),
-                                            textAlign = TextAlign.Center,
-                                        )
-                                        innerTextField()
-                                    }
-                                }
-                            }
-                        },
-                    )
+                    Row(
+                        modifier = Modifier.wrapContentSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FlutterDash,
+                            contentDescription = null,
+                            modifier = Modifier.size(size = 30.dp),
+                            tint = Color(color = 0xFF8E8E9E)
+                        )
+                        Text(
+                            text = "暂无内容",
+                            modifier = Modifier
+                                .wrapContentSize()
+                                .padding(start = 10.dp),
+                            fontSize = 16.sp,
+                            color = Color(color = 0xFF8E8E9E),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
                 Text(
                     text = "Flutter",
@@ -3076,8 +3032,6 @@ class MainActivity : BaseActivity() {
                 )
             }
         }
-
-
     }
 
     /**
@@ -3261,10 +3215,10 @@ class MainActivity : BaseActivity() {
 
     private fun ViewGroup.drawCapsuleDivider(canvas: Canvas) {
         canvas.drawLine(
-            (viewWidth - (capsuleWidth / 2) - capsuleRightPadding - paddingRight).toFloat(),
+            (viewWidth - (capsuleWidth.toDp / 2) - capsuleRightPadding.toDp - paddingRight).toFloat(),
             (capsuleTopPadding + paddingTop + 4.toDp).toFloat(),
-            (viewWidth - (capsuleWidth / 2) - capsuleRightPadding - paddingRight).toFloat(),
-            (capsuleTopPadding + capsuleHeight + paddingTop - 4.toDp).toFloat(),
+            (viewWidth - (capsuleWidth.toDp / 2) - capsuleRightPadding.toDp - paddingRight).toFloat(),
+            (capsuleTopPadding + capsuleHeight.toDp + paddingTop - 4.toDp).toFloat(),
             capsuleDividerPaint,
         )
     }
@@ -3273,19 +3227,21 @@ class MainActivity : BaseActivity() {
         path.reset()
         path.addRoundRect(
             RectF(
-                (viewWidth - capsuleWidth - capsuleRightPadding - paddingRight).toFloat(),
+                (viewWidth - capsuleWidth.toDp - capsuleRightPadding.toDp - paddingRight).toFloat(),
                 (capsuleTopPadding + paddingTop).toFloat(),
-                (viewWidth - capsuleRightPadding - paddingRight).toFloat(),
-                (capsuleTopPadding + capsuleHeight + paddingTop).toFloat()
+                (viewWidth - capsuleRightPadding.toDp - paddingRight).toFloat(),
+                (capsuleTopPadding + capsuleHeight.toDp + paddingTop).toFloat()
             ),
-            capsuleRadius,
-            capsuleRadius,
+            capsuleRadius.toDp.toFloat(),
+            capsuleRadius.toDp.toFloat(),
             Path.Direction.CW,
         )
     }
 
-    private val IContent.getActionPadding: Int
-        get() = capsuleWidth + capsuleRightPadding + mComposeOverlay.paddingRight
+    private fun getActionPadding(): Int {
+        val overlay: View = mViewFactory.getOverlayView
+        return capsuleWidth.toDp + capsuleRightPadding.toDp + overlay.paddingRight
+    }
 
 
     /**
@@ -3467,7 +3423,7 @@ class MainActivity : BaseActivity() {
             setPositiveButton(EcosedResources.POSITIVE_BUTTON_STRING) { dialog, which -> }
             mDebugDialog = create()
         }
-        setSupportActionBar(mToolbar)
+
 //        // 设置操作栏
 //        delegateScope {
 //            // 仅在使用Flutter的Activity时设置ActionBar,防止影响混合应用的界面.
@@ -3908,10 +3864,6 @@ class MainActivity : BaseActivity() {
      * 清单
      */
     private object EcosedManifest {
-        /** 服务动作 */
-        const val ACTION: String = "io.freefeos.sdk.action"
-
-        const val WECHAT_PACKAGE: String = "com.tencent.mm"
 
         /** 谷歌基础服务包名 */
         const val GMS_PACKAGE: String = "com.google.android.gms"
@@ -3960,16 +3912,29 @@ class MainActivity : BaseActivity() {
     private companion object {
 
         /** 用于打印日志的标签 */
-        const val TAG: String = "MainActivity"
+        private const val TAG: String = "MainActivity"
 
         /** 操作栏是否应该在[AUTO_HIDE_DELAY_MILLIS]毫秒后自动隐藏。*/
-        const val AUTO_HIDE: Boolean = false
+        private const val AUTO_HIDE: Boolean = false
 
         /** 如果设置了[AUTO_HIDE]，则在用户交互后隐藏操作栏之前等待的毫秒数。*/
-        const val AUTO_HIDE_DELAY_MILLIS: Int = 3000
+        private const val AUTO_HIDE_DELAY_MILLIS: Int = 3000
 
         /** 一些较老的设备需要在小部件更新和状态和导航栏更改之间有一个小的延迟。*/
-        const val UI_ANIMATOR_DELAY: Int = 300
+        private const val UI_ANIMATOR_DELAY: Int = 300
+
+
+        /** 胶囊宽度 */
+        private const val capsuleWidth: Int = 87
+
+        /** 胶囊高度 */
+        private const val capsuleHeight: Int = 32
+
+        /** 胶囊右边距 */
+        private const val capsuleRightPadding: Int = 16
+
+        /** 胶囊圆角半径 */
+        private const val capsuleRadius: Int = 20
     }
 }
 

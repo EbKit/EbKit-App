@@ -34,9 +34,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-//    kotlinOptions {
-//        jvmTarget = "11"
-//    }
     buildFeatures {
         aidl = true
         compose = true
@@ -48,7 +45,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-coil:0.15.0")
     implementation("com.google.accompanist:accompanist-drawablepainter:0.37.3")
 
-    implementation("androidx.viewpager2:viewpager2:1.1.0")
 
     // Flutter
     implementation(project(":flutter"))
@@ -68,14 +64,9 @@ dependencies {
     implementation(libs.compose.destinations.core)
     ksp(libs.compose.destinations.ksp)
 
-
-
-
-
-    implementation(libs.androidx.material.icons.extended)
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -84,6 +75,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.material)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)

@@ -28,8 +28,10 @@ koin = "4.1.0"
 shizuku = "13.1.5"
 utilcodex = "1.31.1"
 hiddenapibypass = "6.1"
+viewpager2 = "1.1.0"
 
 [libraries]
+androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 baseframework = { module = "com.github.kongzue:BaseFramework", version.ref = "baseframework" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
