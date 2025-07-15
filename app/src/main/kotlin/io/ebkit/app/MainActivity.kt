@@ -1601,6 +1601,7 @@ class MainActivity : BaseActivity() {
             /**
              * 活动创建时执行
              */
+            @SuppressLint("ClickableViewAccessibility")
             override fun onCreate(owner: LifecycleOwner): Unit = activityScope {
                 super.onCreate(owner)
                 DynamicColors.applyToActivitiesIfAvailable(application)
