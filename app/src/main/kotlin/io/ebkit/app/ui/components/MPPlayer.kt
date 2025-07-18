@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.annotation.ExperimentalCoilApi
-import coil.compose.rememberImagePainter
+import com.google.accompanist.imageloading.rememberDrawablePainter
 import io.ebkit.app.R
 import io.ebkit.app.ui.theme.EbKitTheme
 import io.ebkit.app.ui.utils.NoOnClick
@@ -43,8 +43,8 @@ fun MPPlayer(
                     .weight(weight = 1f)
                     .fillMaxSize(),
                 style = AppItemStyle.Image,
-                appIcon = rememberImagePainter(
-                    data = AppCompatResources.getDrawable(
+                appIcon = rememberDrawablePainter(
+                    drawable = AppCompatResources.getDrawable(
                         context,
                         R.mipmap.ic_ecosedkit,
                     ),
@@ -57,8 +57,8 @@ fun MPPlayer(
                     .fillMaxSize(),
                 onLaunch = popBackStack,
                 style = AppItemStyle.Image,
-                appIcon = rememberImagePainter(
-                    data = AppCompatResources.getDrawable(
+                appIcon = rememberDrawablePainter(
+                    drawable = AppCompatResources.getDrawable(
                         context,
                         R.mipmap.ic_ebkit,
                     ),
