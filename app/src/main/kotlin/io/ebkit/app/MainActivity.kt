@@ -165,6 +165,7 @@ import coil.compose.rememberImagePainter
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.PermissionUtils
+import com.google.accompanist.imageloading.rememberDrawablePainter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.DynamicColors
 import com.kongzue.baseframework.BaseActivity
@@ -182,6 +183,8 @@ import io.ebkit.app.ui.components.MPPlayer
 import io.ebkit.app.ui.components.MPTopBar
 import io.ebkit.app.ui.components.OverlayLayer
 import io.ebkit.app.ui.components.RecentPlayer
+import io.ebkit.app.ui.components.StateCard
+import io.ebkit.app.ui.components.StateCardStyle
 import io.ebkit.app.ui.components.ViewFactory
 import io.ebkit.app.ui.components.miniProgramList
 import io.ebkit.app.ui.page.FlutterPage
@@ -948,11 +951,6 @@ class MainActivity : BaseActivity() {
         val x: Float,
         val y: Float,
     )
-
-
-
-
-
 
 
     /**
@@ -1964,9 +1962,6 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    enum class StateCardStyle {
-        Normal, NotInstalled,
-    }
 
     private val mFlutterAdapter: FragmentStateAdapter by lazy {
         return@lazy object : FragmentStateAdapter(this@MainActivity) {
@@ -1980,15 +1975,6 @@ class MainActivity : BaseActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoilApi::class) // Material3
     private val mContent: IContent = object : IContent, ITheme by mTheme {
-
-
-
-
-
-
-
-
-
 
 
         /**
@@ -2007,10 +1993,8 @@ class MainActivity : BaseActivity() {
          * MainActivity布局
          */
         @Composable
-        private fun ActivityMain(factory: IViewFactory? = null,) {
-            var appsLayerVisible by remember {
-                mutableStateOf(value = false)
-            }
+        private fun ActivityMain(factory: IViewFactory? = null) {
+            var appsLayerVisible by remember { mutableStateOf(value = false) }
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -2021,7 +2005,6 @@ class MainActivity : BaseActivity() {
                         appsLayerVisible = false
                     },
                 )
-
                 AnimatedVisibility(
                     modifier = Modifier.fillMaxSize(),
                     visible = !appsLayerVisible,
@@ -2147,6 +2130,7 @@ class MainActivity : BaseActivity() {
                 mutableStateOf(value = false)
             }
             val scroll = rememberScrollState()
+            val context: Context = LocalContext.current
             Scaffold(
                 modifier = modifier
                     .fillMaxSize()
@@ -2239,6 +2223,12 @@ class MainActivity : BaseActivity() {
                         .verticalScroll(state = scroll),
                 ) {
                     StateCard(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp,
+                            bottom = 8.dp,
+                        ),
                         style = StateCardStyle.Normal,
                         navToInstaller = {
                             navController.navigate(
@@ -2292,66 +2282,6 @@ class MainActivity : BaseActivity() {
 
 
         @Composable
-        private fun StateCard(
-            modifier: Modifier = Modifier,
-            style: StateCardStyle = StateCardStyle.Normal,
-            navToInstaller: () -> Unit,
-            showAppsLayer: () -> Unit,
-        ) {
-            Card(
-                onClick = {
-                    navToInstaller()
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 16.dp,
-                        bottom = 8.dp,
-                    ),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            vertical = 24.dp,
-                            horizontal = 24.dp,
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Error,
-                        contentDescription = null,
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(weight = 2f)
-                            .padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = "EcosedKit未安装",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(modifier = Modifier.height(height = 4.dp))
-                        Text(
-                            text = "点此安装",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                    Button(
-                        onClick = showAppsLayer,
-                    ) {
-                        Text(text = "应用")
-                    }
-                }
-            }
-        }
-
-        @Composable
         private fun SettingsDestination() {
             val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
                 rememberTopAppBarState()
@@ -2385,19 +2315,6 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     }
@@ -2605,8 +2522,6 @@ class MainActivity : BaseActivity() {
             Path.Direction.CW,
         )
     }
-
-
 
 
     /**
@@ -3253,7 +3168,6 @@ class MainActivity : BaseActivity() {
 
         /** 一些较老的设备需要在小部件更新和状态和导航栏更改之间有一个小的延迟。*/
         private const val UI_ANIMATOR_DELAY: Int = 300
-
 
 
     }

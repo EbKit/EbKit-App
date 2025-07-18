@@ -56,13 +56,14 @@ fun MPScreen(
         route = AppsPage,
     ),
 ) {
-
     val pageState = rememberPagerState(
         initialPage = initialPage,
         pageCount = { pages.size },
     )
     val coroutineScope = rememberCoroutineScope()
-    OverlayLayer(factory = factory) {
+    OverlayLayer(
+        factory = factory,
+    ) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
             topBar = {
