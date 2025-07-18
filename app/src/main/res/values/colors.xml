@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_ebkit_background">#0F0F0B</color> <!-- EbKit背景色 -->
-    <color name="ic_ebkit_foreground">#F5FBF3</color> <!-- EbKit前景色 -->
-    <color name="ic_ecosedkit_background">#990099</color> <!-- EcosedKit背景色 -->
-    <color name="ic_ecosedkit_foreground">#FF66FF</color> <!-- EcosedKit前景色 -->
+    <color name="ic_ebkit_foreground">#F5FBF3</color>
+    <color name="ic_ebkit_background">#0F0F0B</color>
+    <color name="ic_ecosedkit_foreground">#FF66FF</color>
+    <color name="ic_ecosedkit_background">#990099</color>
 </resources>

@@ -172,6 +172,22 @@ import com.kongzue.baseframework.interfaces.LifeCircleListener
 import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
+import io.ebkit.app.ui.components.AppItem
+import io.ebkit.app.ui.components.AppItemStyle
+import io.ebkit.app.ui.components.AppsGrid
+import io.ebkit.app.ui.components.MPBottomBar
+import io.ebkit.app.ui.components.MPPlayer
+import io.ebkit.app.ui.components.MPTopBar
+import io.ebkit.app.ui.components.OverlayLayer
+import io.ebkit.app.ui.components.RecentPlayer
+import io.ebkit.app.ui.components.ViewFactory
+import io.ebkit.app.ui.components.miniProgramList
+import io.ebkit.app.ui.theme.capsuleHeight
+import io.ebkit.app.ui.theme.capsuleRadius
+import io.ebkit.app.ui.theme.capsuleRightPadding
+import io.ebkit.app.ui.theme.capsuleWidth
+import io.ebkit.app.utils.toDp
+import io.ebkit.app.utils.toSp
 import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.engine.FlutterEngine
@@ -649,20 +665,6 @@ class MainActivity : BaseActivity() {
         val typography: Typography
     }
 
-
-    private interface IViewFactory {
-        val getContentFrame: FrameLayout
-        val getContentView: AbstractComposeView
-        val getOverlayView: FrameLayout
-        val getToolbarView: MaterialToolbar
-        val getFlutterView: ViewPager2
-        val getMenuButton: AppCompatImageButton
-        val getCloseButton: AppCompatImageButton
-
-        val fillMaxSize: ViewGroup.LayoutParams
-        val wrapContentSize: ViewGroup.LayoutParams
-    }
-
     private interface IBackPressHandler {
 
     }
@@ -942,55 +944,11 @@ class MainActivity : BaseActivity() {
         val y: Float,
     )
 
-    data class MiniProgramItem(
-        /**
-         * 名称
-         */
-        val title: String,
-        /**
-         * 图标
-         */
-        val icon: String,
-    )
 
-    enum class AppItemStyle {
-        Image, Icon,
-    }
 
-    private val miniProgramList: ArrayList<MiniProgramItem> = arrayListOf<MiniProgramItem>(
-        MiniProgramItem(
-            title = "饿了么",
-            icon = "https://img0.baidu.com/it/u=2625005847,2716895016&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "美图",
-            icon = "https://img1.baidu.com/it/u=1752963805,4078506746&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "滴滴",
-            icon = "https://img0.baidu.com/it/u=1068101613,1323308017&fm=253&fmt=auto&app=138&f=PNG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "青橘单车",
-            icon = "https://img0.baidu.com/it/u=195120191,2939897897&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
-        ),
-        MiniProgramItem(
-            title = "斗地主",
-            icon = "https://img2.baidu.com/it/u=926635057,1451495262&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
-        ),
-        MiniProgramItem(
-            title = "羊城通",
-            icon = "https://img2.baidu.com/it/u=2751300851,4181594410&fm=253&fmt=auto&app=138&f=JPEG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "美图秀秀",
-            icon = "https://img1.baidu.com/it/u=417359459,147216874&fm=253&fmt=auto&app=138&f=PNG?w=200&h=200"
-        ),
-        MiniProgramItem(
-            title = "拼多多",
-            icon = "https://img2.baidu.com/it/u=620052409,134315960&fm=253&fmt=auto&app=138&f=PNG?w=190&h=190"
-        ),
-    )
+
+
+
 
     /**
      ***********************************************************************************************
@@ -2018,70 +1976,16 @@ class MainActivity : BaseActivity() {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoilApi::class) // Material3
     private val mContent: IContent = object : IContent, ITheme by mTheme {
 
-        /**
-         * 获取胶囊按钮右填充
-         */
-        @Composable
-        private fun rememberCapsulePadding(excess: Dp = 0.dp): PaddingValues {
-            val activity: Activity? = LocalActivity.current
-            val density: Density = LocalDensity.current
-            return PaddingValues(
-                end = when (activity?.javaClass) {
-                    MainActivity::class.java -> with(receiver = density) {
-                        getActionPadding().toDp() - excess
-                    }
 
-                    else -> 0.dp
-                }
-            )
-        }
 
-        @Composable
-        private fun ViewFactory(
-            modifier: Modifier = Modifier,
-            factory: IViewFactory.() -> View,
-        ) {
-            val currentActivity: Activity? = LocalActivity.current
-            AndroidView(
-                factory = { context ->
-                    when (currentActivity?.javaClass) {
-                        MainActivity::class.java -> mViewFactory.factory()
-                        else -> View(context)
-                    }
-                },
-                modifier = modifier,
-            )
-        }
 
-        @Composable
-        private fun OverlayLayer(
-            modifier: Modifier = Modifier,
-            content: @Composable BoxScope.() -> Unit,
-        ) {
-            Box(modifier = modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    content = content,
-                )
-                when {
-                    LocalInspectionMode.current -> Box(
-                        modifier = modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
 
-                    }
 
-                    else -> ViewFactory(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { getOverlayView }
-                    )
-                }
-            }
-        }
 
         @Composable
         private fun ActionBar(
             modifier: Modifier = Modifier,
+            factory: IViewFactory? = null,
             title: (@Composable () -> Unit)? = null,
             navigationIcon: @Composable () -> Unit = {},
             actions: @Composable RowScope.() -> Unit = {},
@@ -2102,8 +2006,10 @@ class MainActivity : BaseActivity() {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight(),
-                                factory = { getToolbarView },
-                            )
+                                factory = factory,
+                            ) {
+                                getToolbarView
+                            }
                         }
                     },
                     modifier = Modifier
@@ -2125,7 +2031,10 @@ class MainActivity : BaseActivity() {
         }
 
         @Composable
-        private fun Flutter(modifier: Modifier = Modifier) {
+        private fun Flutter(
+            modifier: Modifier = Modifier,
+            factory: IViewFactory? = null,
+            ) {
             Surface(
                 modifier = modifier.fillMaxSize(),
                 shape = MaterialTheme.shapes.medium,
@@ -2144,8 +2053,10 @@ class MainActivity : BaseActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(shape = MaterialTheme.shapes.medium),
-                        factory = { getFlutterView },
-                    )
+                        factory = factory,
+                    ) {
+                        getFlutterView
+                    }
                 }
             }
         }
@@ -2172,7 +2083,9 @@ class MainActivity : BaseActivity() {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                OverlayLayer {
+                OverlayLayer(
+                    factory = mViewFactory
+                ) {
                     MPScreen(
                         popBackStack = {
                             appsLayerVisible = false
@@ -2555,7 +2468,7 @@ class MainActivity : BaseActivity() {
             Scaffold(
                 modifier = modifier.fillMaxSize(),
                 topBar = {
-                    MPTopBar()
+                    MPTopBar(factory = mViewFactory)
                 },
                 bottomBar = {
                     MPBottomBar(popBackStack = popBackStack)
@@ -2722,6 +2635,7 @@ class MainActivity : BaseActivity() {
                         top = 16.dp,
                         bottom = 8.dp,
                     ),
+                    factory = mViewFactory,
                     navigationIcon = {
                         IconButton(onClick = animateToApps) {
                             Icon(
@@ -2737,300 +2651,21 @@ class MainActivity : BaseActivity() {
                         end = 16.dp,
                         top = 8.dp,
                         bottom = 16.dp,
-                    )
-                )
-            }
-        }
-
-        @Composable
-        private fun MPTopBar(modifier: Modifier = Modifier) {
-            Column(
-                modifier = modifier.fillMaxWidth(),
-            ) {
-                CenterAlignedTopAppBar(
-                    modifier = Modifier.fillMaxWidth(),
-                    title = {
-                        Text(
-                            text = "应用",
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                        )
-                    },
-                    navigationIcon = {
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 12.dp) // TopAppBar 自带 4dp 左边距
-                                .width(width = 87.dp)
-                                .height(height = 32.dp)
-                                .clip(shape = RoundedCornerShape(size = 20.dp))
-                                .background(Color(color = 0xff434056))
-                                .clickable(onClick = {}),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Row(
-                                modifier = Modifier.wrapContentSize(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(size = 20.dp),
-                                    tint = Color(color = 0xff8E8E9E)
-                                )
-                                Text(
-                                    text = "搜索",
-                                    modifier = Modifier
-                                        .wrapContentSize()
-                                        .padding(start = 6.dp),
-                                    fontSize = 13.sp,
-                                    color = Color(color = 0xff8E8E9E),
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        Spacer(
-                            modifier = Modifier.padding(
-                                paddingValues = rememberCapsulePadding(
-                                    excess = 4.dp // TopAppBar 自带 4dp 右边距
-                                ),
-                            ),
-                        )
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent,
                     ),
-                )
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 0.5.dp,
-                    color = Color(color = 0x22000000)
+                    factory = mViewFactory
                 )
             }
         }
 
-        @Composable
-        private fun MPBottomBar(
-            modifier: Modifier = Modifier,
-            popBackStack: () -> Unit,
-        ) {
-            BottomAppBar(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .fillMaxWidth()
-                    .clip(
-                        shape = RoundedCornerShape(
-                            topStart = 10.dp,
-                            topEnd = 10.dp
-                        ),
-                    ),
-                actions = {
-                    Text(
-                        modifier = Modifier.padding(start = 16.dp),
-                        text = stringResource(id = R.string.app_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
-                    )
-                },
-                floatingActionButton = {
-                    ExtendedFloatingActionButton(
-                        text = {
-                            Text(text = "Back")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = popBackStack,
-                        modifier = Modifier.wrapContentSize(),
-                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
-                    )
-                },
-                containerColor = Color(color = 0xff787493),
-            )
-        }
 
-        @Composable
-        private fun AppsGrid(modifier: Modifier = Modifier, list: ArrayList<MiniProgramItem>) {
-            LazyVerticalGrid(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(start = 15.dp, end = 15.dp)
-                    .height(height = 180.dp),
-                horizontalArrangement = Arrangement.spacedBy(space = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(space = 10.dp),
-                columns = GridCells.Fixed(count = 4),
-                userScrollEnabled = false,
-            ) {
-                items(items = list) { item ->
-                    Box {
-                        AppItem(
-                            style = AppItemStyle.Image,
-                            appIcon = rememberImagePainter(data = item.icon),
-                            appName = item.title,
-                        )
-                    }
-                }
-            }
-        }
 
-        @Composable
-        private fun AppItem(
-            modifier: Modifier = Modifier,
-            onLaunch: () -> Unit = {},
-            style: AppItemStyle,
-            appIcon: Painter,
-            appName: String,
-        ) {
-            Column(
-                modifier = modifier.wrapContentSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(size = 60.dp)
-                        .clip(shape = RoundedCornerShape(size = 35.dp))
-                        .background(color = Color(color = 0xff434056))
-                        .clickable(onClick = onLaunch),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = appIcon,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = when (style) {
-                            AppItemStyle.Image -> Modifier
-                                .fillMaxSize()
-                                .clip(
-                                    shape = RoundedCornerShape(
-                                        size = 35.dp,
-                                    ),
-                                )
 
-                            AppItemStyle.Icon -> Modifier.size(
-                                size = 30.dp,
-                            )
-                        }
-                    )
-                }
-                Text(
-                    text = appName,
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
 
-        @Composable
-        private fun MPPlayer(
-            modifier: Modifier = Modifier,
-            animateToFlutter: () -> Unit,
-        ) {
-            Row(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp)
-                    .height(height = 90.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(weight = 1f),
-                ) {
-                    AppItem(
-                        modifier = Modifier
-                            .weight(weight = 1f)
-                            .fillMaxSize(),
-                        style = AppItemStyle.Image,
-                        appIcon = rememberImagePainter(
-                            data = AppCompatResources.getDrawable(
-                                LocalContext.current,
-                                R.mipmap.ic_ecosedkit,
-                            ),
-                        ),
-                        appName = "EKit",
-                    )
-                    AppItem(
-                        modifier = Modifier
-                            .weight(weight = 1f)
-                            .fillMaxSize(),
-                        style = AppItemStyle.Image,
-                        appIcon = rememberImagePainter(
-                            data = AppCompatResources.getDrawable(
-                                LocalContext.current,
-                                R.mipmap.ic_ebkit,
-                            ),
-                        ),
-                        appName = "EbKit",
-                    )
-                }
-                RecentPlayer(
-                    modifier = Modifier
-                        .weight(weight = 1f)
-                        .fillMaxSize(),
-                    animateToFlutter = animateToFlutter,
-                )
-            }
-        }
 
-        @Composable
-        private fun RecentPlayer(
-            modifier: Modifier = Modifier,
-            animateToFlutter: () -> Unit,
-        ) {
-            Column(
-                modifier = modifier
-                    .padding(start = 16.dp)
-                    .wrapContentSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .height(height = 60.dp)
-                        .fillMaxWidth()
-                        .clip(shape = RoundedCornerShape(size = 40.dp))
-                        .background(Color(color = 0xFF434056))
-                        .clickable(onClick = animateToFlutter),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        modifier = Modifier.wrapContentSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.FlutterDash,
-                            contentDescription = null,
-                            modifier = Modifier.size(size = 30.dp),
-                            tint = Color(color = 0xFF8E8E9E)
-                        )
-                        Text(
-                            text = "暂无内容",
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .padding(start = 10.dp),
-                            fontSize = 16.sp,
-                            color = Color(color = 0xFF8E8E9E),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-                Text(
-                    text = "Flutter",
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
+
+
+
+
     }
 
     /**
@@ -3237,10 +2872,7 @@ class MainActivity : BaseActivity() {
         )
     }
 
-    private fun getActionPadding(): Int {
-        val overlay: View = mViewFactory.getOverlayView
-        return capsuleWidth.toDp + capsuleRightPadding.toDp + overlay.paddingRight
-    }
+
 
 
     /**
@@ -3790,40 +3422,6 @@ class MainActivity : BaseActivity() {
     }
 
     /**
-     * 转换为DP
-     */
-    private val Int.toDp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            this@toDp.toFloat(),
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
-    /**
-     * 转换为SP
-     */
-    private val Int.toSp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_SP,
-            this@toSp.toFloat(),
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
-    private val Float.toDp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            this,
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
-    private val Float.toSp: Int
-        get() = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_SP,
-            this,
-            Resources.getSystem().displayMetrics,
-        ).toInt()
-
-    /**
      * 扩展函数判断是否为空
      */
     private inline val Any?.isNull: Boolean
@@ -3908,7 +3506,7 @@ class MainActivity : BaseActivity() {
     /**
      * 构建器(伴生对象)
      */
-    private companion object {
+    companion object {
 
         /** 用于打印日志的标签 */
         private const val TAG: String = "MainActivity"
@@ -3923,17 +3521,7 @@ class MainActivity : BaseActivity() {
         private const val UI_ANIMATOR_DELAY: Int = 300
 
 
-        /** 胶囊宽度 */
-        private const val capsuleWidth: Int = 87
 
-        /** 胶囊高度 */
-        private const val capsuleHeight: Int = 32
-
-        /** 胶囊右边距 */
-        private const val capsuleRightPadding: Int = 16
-
-        /** 胶囊圆角半径 */
-        private const val capsuleRadius: Int = 20
     }
 }
 

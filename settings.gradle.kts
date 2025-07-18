@@ -23,7 +23,11 @@ dependencyResolutionManagement {
 }
 
 // Flutter
-apply(from = rootProject.projectDir.resolve(relative = ".android/include_flutter.groovy"))
+apply(
+    from = rootProject.projectDir.resolve(
+        relative = ".android/include_flutter.groovy"
+    )
+)
 
 rootProject.name = "EbKit"
 include(":app")
