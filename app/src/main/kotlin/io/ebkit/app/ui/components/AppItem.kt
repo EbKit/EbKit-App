@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ebkit.app.R
 import io.ebkit.app.ui.theme.EbKitTheme
+import io.ebkit.app.ui.utils.NoOnClick
 
 enum class AppItemStyle {
     Image, Icon,
@@ -33,7 +34,7 @@ enum class AppItemStyle {
 @Composable
 fun AppItem(
     modifier: Modifier = Modifier,
-    onLaunch: () -> Unit = {},
+    onLaunch: () -> Unit = NoOnClick,
     style: AppItemStyle,
     appIcon: Painter,
     appName: String,
@@ -81,7 +82,7 @@ fun AppItem(
 
 @Preview
 @Composable
-fun AppItemPreview() {
+private fun AppItemPreview() {
     EbKitTheme {
         AppItem(
             style = AppItemStyle.Icon,

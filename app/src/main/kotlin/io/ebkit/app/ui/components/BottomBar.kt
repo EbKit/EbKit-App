@@ -22,11 +22,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.ebkit.app.R
 import io.ebkit.app.ui.theme.EbKitTheme
+import io.ebkit.app.ui.utils.NoOnClick
 
 @Composable
 fun MPBottomBar(
     modifier: Modifier = Modifier,
-    popBackStack: () -> Unit,
+    popBackStack: () -> Unit = NoOnClick,
 ) {
     BottomAppBar(
         modifier = modifier
@@ -51,7 +52,7 @@ fun MPBottomBar(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = {
-                    Text(text = "Back")
+                    Text(text = "返回")
                 },
                 icon = {
                     Icon(
@@ -70,7 +71,7 @@ fun MPBottomBar(
 
 @Preview
 @Composable
-fun MPBottomBarPreview() {
+private fun MPBottomBarPreview() {
     EbKitTheme {
         MPBottomBar(
             popBackStack = {},

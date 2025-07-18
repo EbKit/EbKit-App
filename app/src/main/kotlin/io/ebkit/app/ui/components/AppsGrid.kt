@@ -88,7 +88,7 @@ val miniProgramList: ArrayList<MiniProgramItem> = arrayListOf(
 
 @Preview
 @Composable
-fun AppsGridPreview() {
+private fun AppsGridPreview() {
     EbKitTheme {
         AppsGrid(list = miniProgramList)
     }

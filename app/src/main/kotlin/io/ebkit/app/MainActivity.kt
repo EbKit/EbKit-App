@@ -172,9 +172,11 @@ import com.kongzue.baseframework.interfaces.LifeCircleListener
 import com.kongzue.baseframework.util.JumpParameter
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE
 import io.ebkit.app.MainActivity.Companion.AUTO_HIDE_DELAY_MILLIS
+import io.ebkit.app.ui.components.ActionBar
 import io.ebkit.app.ui.components.AppItem
 import io.ebkit.app.ui.components.AppItemStyle
 import io.ebkit.app.ui.components.AppsGrid
+import io.ebkit.app.ui.components.Flutter
 import io.ebkit.app.ui.components.MPBottomBar
 import io.ebkit.app.ui.components.MPPlayer
 import io.ebkit.app.ui.components.MPTopBar
@@ -182,6 +184,9 @@ import io.ebkit.app.ui.components.OverlayLayer
 import io.ebkit.app.ui.components.RecentPlayer
 import io.ebkit.app.ui.components.ViewFactory
 import io.ebkit.app.ui.components.miniProgramList
+import io.ebkit.app.ui.page.FlutterPage
+import io.ebkit.app.ui.page.MPAppsPage
+import io.ebkit.app.ui.screen.MPScreen
 import io.ebkit.app.ui.theme.capsuleHeight
 import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleRightPadding
@@ -1982,84 +1987,9 @@ class MainActivity : BaseActivity() {
 
 
 
-        @Composable
-        private fun ActionBar(
-            modifier: Modifier = Modifier,
-            factory: IViewFactory? = null,
-            title: (@Composable () -> Unit)? = null,
-            navigationIcon: @Composable () -> Unit = {},
-            actions: @Composable RowScope.() -> Unit = {},
-        ) {
-            Surface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
-            ) {
-                TopAppBar(
-                    title = {
-                        when {
-                            title != null -> title()
-                            LocalInspectionMode.current -> Text(text = "ActionBar")
-                            else -> ViewFactory(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                                factory = factory,
-                            ) {
-                                getToolbarView
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(),
-                    navigationIcon = navigationIcon,
-                    actions = actions,
-                    windowInsets = WindowInsets(
-                        left = 0.dp,
-                        top = 0.dp,
-                        right = 0.dp,
-                        bottom = 0.dp,
-                    ),
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                    ),
-                )
-            }
-        }
 
-        @Composable
-        private fun Flutter(
-            modifier: Modifier = Modifier,
-            factory: IViewFactory? = null,
-            ) {
-            Surface(
-                modifier = modifier.fillMaxSize(),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                when {
-                    LocalInspectionMode.current -> Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(shape = MaterialTheme.shapes.medium),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "Flutter 在 InspectionMode 中不可用")
-                    }
 
-                    else -> ViewFactory(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(shape = MaterialTheme.shapes.medium),
-                        factory = factory,
-                    ) {
-                        getFlutterView
-                    }
-                }
-            }
-        }
+
 
         /**
          * 布局
@@ -2067,7 +1997,9 @@ class MainActivity : BaseActivity() {
         @Composable
         override fun EbKitContent() {
             EbKitTheme {
-                ActivityMain()
+                ActivityMain(
+                    factory = mViewFactory
+                )
             }
         }
 
@@ -2075,7 +2007,7 @@ class MainActivity : BaseActivity() {
          * MainActivity布局
          */
         @Composable
-        private fun ActivityMain() {
+        private fun ActivityMain(factory: IViewFactory? = null,) {
             var appsLayerVisible by remember {
                 mutableStateOf(value = false)
             }
@@ -2083,15 +2015,13 @@ class MainActivity : BaseActivity() {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                OverlayLayer(
-                    factory = mViewFactory
-                ) {
-                    MPScreen(
-                        popBackStack = {
-                            appsLayerVisible = false
-                        },
-                    )
-                }
+                MPScreen(
+                    factory = factory,
+                    popBackStack = {
+                        appsLayerVisible = false
+                    },
+                )
+
                 AnimatedVisibility(
                     modifier = Modifier.fillMaxSize(),
                     visible = !appsLayerVisible,
@@ -2388,7 +2318,7 @@ class MainActivity : BaseActivity() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            vertical = 12.dp,
+                            vertical = 24.dp,
                             horizontal = 24.dp,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
@@ -2456,206 +2386,10 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        @Composable
-        private fun MPScreen(
-            modifier: Modifier = Modifier,
-            popBackStack: () -> Unit,
-        ) {
-            val pageState = rememberPagerState(
-                pageCount = { 2 },
-            )
-            val coroutineScope = rememberCoroutineScope()
-            Scaffold(
-                modifier = modifier.fillMaxSize(),
-                topBar = {
-                    MPTopBar(factory = mViewFactory)
-                },
-                bottomBar = {
-                    MPBottomBar(popBackStack = popBackStack)
-                },
-                containerColor = Color(color = 0xff1B1B2B),
-            ) { innerPadding ->
-                HorizontalPager(
-                    state = pageState,
-                    modifier = Modifier.padding(
-                        paddingValues = innerPadding,
-                    ),
-                    userScrollEnabled = false,
-                ) { page ->
-                    when (page) {
-                        0 -> MPAppsPage(
-                            animateToFlutter = {
-                                coroutineScope.launch {
-                                    pageState.animateScrollToPage(1)
-                                }
-                            },
-                        )
 
-                        1 -> FlutterPage(
-                            animateToApps = {
-                                coroutineScope.launch {
-                                    pageState.animateScrollToPage(page = 0)
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-        }
 
-        @Composable
-        private fun MPAppsPage(
-            modifier: Modifier = Modifier,
-            animateToFlutter: () -> Unit,
-        ) {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(state = scrollState),
-            ) {
-                ActionBar(
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = 8.dp
-                    ),
-                    title = {
-                        Text("Apps")
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = animateToFlutter
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                            )
-                        }
-                    }
-                )
-                Box(
-                    modifier = Modifier.padding(
-                        start = 30.dp,
-                        bottom = 15.dp,
-                        top = 30.dp,
-                    ),
-                ) {
-                    Text(
-                        text = "音乐和视频",
-                        fontSize = 14.sp,
-                        color = Color(
-                            color = 0xFF8E8E9E,
-                        ),
-                    )
-                }
-                MPPlayer(animateToFlutter = animateToFlutter)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(
-                            start = 30.dp,
-                            bottom = 15.dp,
-                            top = 30.dp,
-                            end = 30.dp,
-                        ),
-                ) {
-                    Row {
-                        Box(
-                            modifier = Modifier.weight(weight = 1f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = "最近使用小程序",
-                                fontSize = 14.sp,
-                                color = Color(color = 0xff8E8E9E),
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(weight = 1f)
-                                .wrapContentHeight(align = Alignment.CenterVertically),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "更多",
-                                    fontSize = 14.sp,
-                                    color = Color(color = 0xff8E8E9E),
-                                )
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(size = 16.dp),
-                                    tint = Color(color = 0xff8E8E9E),
-                                )
-                            }
-                        }
-                    }
-                }
-                AppsGrid(list = miniProgramList)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(
-                            start = 30.dp,
-                            bottom = 15.dp,
-                            top = 30.dp,
-                        ),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Text(
-                        text = "我的小程序",
-                        fontSize = 14.sp,
-                        color = Color(color = 0xff8E8E9E),
-                    )
-                }
-                AppsGrid(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    list = miniProgramList,
-                )
-            }
-        }
 
-        @Composable
-        private fun FlutterPage(
-            modifier: Modifier = Modifier,
-            animateToApps: () -> Unit,
-        ) {
-            Column(modifier = modifier.fillMaxSize()) {
-                ActionBar(
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 16.dp,
-                        bottom = 8.dp,
-                    ),
-                    factory = mViewFactory,
-                    navigationIcon = {
-                        IconButton(onClick = animateToApps) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = null,
-                            )
-                        }
-                    }
-                )
-                Flutter(
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = 16.dp,
-                    ),
-                    factory = mViewFactory
-                )
-            }
-        }
+
 
 
 

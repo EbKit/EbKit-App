@@ -25,11 +25,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ebkit.app.ui.theme.EbKitTheme
+import io.ebkit.app.ui.utils.NoOnClick
 
 @Composable
 fun RecentPlayer(
     modifier: Modifier = Modifier,
-    animateToFlutter: () -> Unit = {},
+    animateToFlutter: () -> Unit = NoOnClick,
 ) {
     Column(
         modifier = modifier.wrapContentSize(),

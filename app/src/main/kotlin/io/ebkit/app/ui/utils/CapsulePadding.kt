@@ -14,6 +14,7 @@ import io.ebkit.app.IViewFactory
 import io.ebkit.app.MainActivity
 import io.ebkit.app.ui.theme.capsuleRightPadding
 import io.ebkit.app.ui.theme.capsuleWidth
+import io.ebkit.app.utils.toDp
 
 /**
  * 获取胶囊按钮右填充
@@ -32,7 +33,7 @@ fun rememberCapsulePadding(
             inspection -> 0.dp
 
             activity?.javaClass == MainActivity::class.java -> with(receiver = density) {
-                capsuleWidth.toDp() + capsuleRightPadding.toDp() + (overlay?.paddingRight?:0).toDp() - excess
+                capsuleWidth.toDp.toDp() + capsuleRightPadding.toDp.toDp() + (overlay?.paddingRight?:0).toDp() - excess
             }
 
             else -> 0.dp

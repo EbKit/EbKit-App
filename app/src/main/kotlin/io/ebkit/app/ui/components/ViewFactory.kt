@@ -19,7 +19,9 @@ fun ViewFactory(
     view: IViewFactory.() -> View? = { null },
 ) {
     val inspection: Boolean = LocalInspectionMode.current
-    val inspectionModeText = stringResource(id = R.string.inspection_mode_text)
+    val inspectionModeText: String = stringResource(
+        id = R.string.inspection_mode_text,
+    )
     AndroidView(
         factory = { context ->
             when {

@@ -17,12 +17,14 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import io.ebkit.app.R
 import io.ebkit.app.ui.theme.EbKitTheme
+import io.ebkit.app.ui.utils.NoOnClick
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 fun MPPlayer(
     modifier: Modifier = Modifier,
-    animateToFlutter: () -> Unit = {},
+    popBackStack: () -> Unit = NoOnClick,
+    animateToFlutter: () -> Unit = NoOnClick,
 ) {
     val context: Context = LocalContext.current
     Row(
@@ -53,6 +55,7 @@ fun MPPlayer(
                 modifier = Modifier
                     .weight(weight = 1f)
                     .fillMaxSize(),
+                onLaunch = popBackStack,
                 style = AppItemStyle.Image,
                 appIcon = rememberImagePainter(
                     data = AppCompatResources.getDrawable(
