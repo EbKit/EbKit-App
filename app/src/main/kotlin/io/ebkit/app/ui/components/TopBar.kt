@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,10 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ebkit.app.IViewFactory
@@ -39,7 +36,6 @@ import io.ebkit.app.ui.theme.capsuleHeight
 import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleWidth
 import io.ebkit.app.ui.utils.rememberCapsulePadding
-import io.ebkit.app.utils.toDp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +43,6 @@ fun MPTopBar(
     modifier: Modifier = Modifier,
     factory: IViewFactory? = null,
 ) {
-    val density: Density = LocalDensity.current
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -62,37 +57,35 @@ fun MPTopBar(
                 )
             },
             navigationIcon = {
-                with(receiver = density) {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = (16 - 4).dp) // TopAppBar 自带 4dp 左边距
-                            .width(width = capsuleWidth.toDp.toDp())
-                            .height(height = capsuleHeight.toDp.toDp())
-                            .clip(shape = RoundedCornerShape(size = capsuleRadius.toDp.toDp()))
-                            .background(Color(color = 0xff434056))
-                            .clickable(onClick = {}),
-                        contentAlignment = Alignment.Center,
+                Box(
+                    modifier = Modifier
+                        .padding(start = (16 - 4).dp) // TopAppBar 自带 4dp 左边距
+                        .width(width = capsuleWidth)
+                        .height(height = capsuleHeight)
+                        .clip(shape = RoundedCornerShape(size = capsuleRadius))
+                        .background(Color(color = 0xff434056))
+                        .clickable(onClick = {}),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(
+                        modifier = Modifier.wrapContentSize(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier.wrapContentSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = null,
-                                modifier = Modifier.size(size = 20.dp),
-                                tint = Color(color = 0xff8E8E9E)
-                            )
-                            Text(
-                                text = "搜索",
-                                modifier = Modifier
-                                    .wrapContentSize()
-                                    .padding(start = 6.dp),
-                                fontSize = 13.sp,
-                                color = Color(color = 0xff8E8E9E),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(size = 20.dp),
+                            tint = Color(color = 0xff8E8E9E)
+                        )
+                        Text(
+                            text = "搜索",
+                            modifier = Modifier
+                                .wrapContentSize()
+                                .padding(start = 6.dp),
+                            fontSize = 13.sp,
+                            color = Color(color = 0xff8E8E9E),
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 }
             },

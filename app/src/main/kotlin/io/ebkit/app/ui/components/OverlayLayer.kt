@@ -23,10 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.ebkit.app.IViewFactory
 import io.ebkit.app.ui.theme.EbKitTheme
@@ -36,7 +34,6 @@ import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleRightPadding
 import io.ebkit.app.ui.theme.capsuleWidth
 import io.ebkit.app.ui.utils.NoOnClick
-import io.ebkit.app.utils.toDp
 
 @Composable
 fun OverlayLayer(
@@ -45,7 +42,6 @@ fun OverlayLayer(
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     val inspection: Boolean = LocalInspectionMode.current
-    val density: Density = LocalDensity.current
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -58,53 +54,51 @@ fun OverlayLayer(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.TopEnd,
             ) {
-                with(receiver = density) {
-                    Row(
-                        modifier = Modifier
-                            .padding(
-                                top = ((actionBarExpandedHeight.toDp.toDp() - capsuleHeight.toDp.toDp()) / 2), // TopAppBar 高度65
-                                end = capsuleRightPadding.toDp.toDp(),
-                            )
-                            .systemBarsPadding()
-                            .height(height = capsuleHeight.toDp.toDp())
-                            .width(width = capsuleWidth.toDp.toDp())
-                            .clip(shape = RoundedCornerShape(size = capsuleRadius.toDp.toDp()))
-                            .background(color = Color(color = 0xff434056)),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(weight = 1f)
-                                .fillMaxSize()
-                                .clickable(onClick = NoOnClick),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreHoriz,
-                                contentDescription = null,
-                                tint = Color(color = 0xff8E8E9E),
-                            )
-                        }
-                        VerticalDivider(
-                            modifier = Modifier
-                                .padding(vertical = 5.dp)
-                                .wrapContentWidth()
-                                .fillMaxHeight(),
-                            color = Color(color = 0xff8E8E9E),
+                Row(
+                    modifier = Modifier
+                        .padding(
+                            top = ((actionBarExpandedHeight - capsuleHeight) / 2),
+                            end = capsuleRightPadding,
                         )
-                        Box(
-                            modifier = Modifier
-                                .weight(weight = 1f)
-                                .fillMaxSize()
-                                .clickable(onClick = NoOnClick),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = null,
-                                tint = Color(color = 0xff8E8E9E),
-                            )
-                        }
+                        .systemBarsPadding()
+                        .height(height = capsuleHeight)
+                        .width(width = capsuleWidth)
+                        .clip(shape = RoundedCornerShape(size = capsuleRadius))
+                        .background(color = Color(color = 0xff434056)),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(weight = 1f)
+                            .fillMaxSize()
+                            .clickable(onClick = NoOnClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreHoriz,
+                            contentDescription = null,
+                            tint = Color(color = 0xff8E8E9E),
+                        )
+                    }
+                    VerticalDivider(
+                        modifier = Modifier
+                            .padding(vertical = 5.dp)
+                            .wrapContentWidth()
+                            .fillMaxHeight(),
+                        color = Color(color = 0xff8E8E9E),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(weight = 1f)
+                            .fillMaxSize()
+                            .clickable(onClick = NoOnClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = null,
+                            tint = Color(color = 0xff8E8E9E),
+                        )
                     }
                 }
             }

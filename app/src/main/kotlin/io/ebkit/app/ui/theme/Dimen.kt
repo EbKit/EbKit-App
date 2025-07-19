@@ -1,16 +1,26 @@
 package io.ebkit.app.ui.theme
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
 // 胶囊宽度
-const val capsuleWidth: Int = 87
+val capsuleWidth: Dp = 87.dp
 
 // 胶囊高度
-const val capsuleHeight: Int = 32
+val capsuleHeight: Dp = 32.dp
 
 // 胶囊右边距
-const val capsuleRightPadding: Int = 16
+val capsuleRightPadding: Dp = 16.dp
 
 // 胶囊圆角半径
-const val capsuleRadius: Int = 20
+val capsuleRadius: Dp = 20.dp
 
 // ActionBar 默认高度
-const val actionBarExpandedHeight: Int = 64
+@OptIn(ExperimentalMaterial3Api::class)
+val actionBarExpandedHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight
+
+val bannerWidth = 16.dp // 角标宽度
+val bannerDistanceOriginPointLength = 55.dp // 角标距离原点长度
