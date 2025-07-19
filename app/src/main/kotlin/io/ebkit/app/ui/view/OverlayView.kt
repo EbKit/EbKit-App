@@ -2,27 +2,25 @@ package io.ebkit.app.ui.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Path
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import io.ebkit.app.BuildConfig
 import io.ebkit.app.R
 import io.ebkit.app.ui.theme.BannerContainer
 import io.ebkit.app.ui.theme.BannerContent
+import io.ebkit.app.ui.theme.BannerTextSize
 import io.ebkit.app.ui.theme.CapsuleContainer
 import io.ebkit.app.ui.theme.CapsuleContent
 import io.ebkit.app.ui.theme.CapsuleStroke
@@ -30,8 +28,10 @@ import io.ebkit.app.ui.theme.actionBarExpandedHeight
 import io.ebkit.app.ui.theme.bannerDistanceOriginPointLength
 import io.ebkit.app.ui.theme.bannerWidth
 import io.ebkit.app.ui.theme.capsuleHeight
+import io.ebkit.app.ui.theme.capsuleIndent
 import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleRightPadding
+import io.ebkit.app.ui.theme.capsuleStrokeWidth
 import io.ebkit.app.ui.theme.capsuleWidth
 import io.ebkit.app.ui.utils.convertDpToPx
 import io.ebkit.app.ui.utils.convertSpToPx
@@ -50,7 +50,6 @@ class OverlayView @JvmOverloads constructor(
 
     /** 是否显示调试信息 */
     private val show: Boolean = BuildConfig.DEBUG
-
 
 
     /** 边角横幅画笔 */
@@ -77,14 +76,14 @@ class OverlayView @JvmOverloads constructor(
     ).apply {
         color = CapsuleStroke.toArgb()
         style = Paint.Style.STROKE
-        strokeWidth = convertDpToPx(context = context, value = 1.dp).toFloat()
+        strokeWidth = computingCapsuleStrokeWidth.toFloat()
     }
     private val capsuleDividerPaint: Paint = Paint(
         Paint.ANTI_ALIAS_FLAG,
     ).apply {
         color = CapsuleStroke.toArgb()
         style = Paint.Style.STROKE
-        strokeWidth = convertDpToPx(context = context, value = 1.dp).toFloat()
+        strokeWidth = computingCapsuleStrokeWidth.toFloat()
     }
 
 
@@ -95,7 +94,7 @@ class OverlayView @JvmOverloads constructor(
         Paint.ANTI_ALIAS_FLAG,
     ).apply {
         color = BannerContent.toArgb()
-        textSize = convertSpToPx(context = context, value = 10.sp).toFloat()
+        textSize = computingBannerTextSize.toFloat()
         style = Paint.Style.FILL
         textAlign = Paint.Align.LEFT
     }
@@ -103,7 +102,7 @@ class OverlayView @JvmOverloads constructor(
         Paint.ANTI_ALIAS_FLAG,
     ).apply {
         color = BannerContent.toArgb()
-        textSize = convertSpToPx(context = context, value = 10.sp).toFloat()
+        textSize = computingBannerTextSize.toFloat()
         style = Paint.Style.FILL
         textAlign = Paint.Align.LEFT
     }
@@ -186,8 +185,7 @@ class OverlayView @JvmOverloads constructor(
                     setImageResource(R.drawable.baseline_more_horiz_24)
                     setBackgroundColor(Color.Transparent.toArgb())
                     setColorFilter(
-                        CapsuleContent.toArgb(),
-                        PorterDuff.Mode.SRC_IN
+                        CapsuleContent.toArgb(), PorterDuff.Mode.SRC_IN
                     )
                     setOnClickListener {
                         Toast.makeText(
@@ -202,8 +200,7 @@ class OverlayView @JvmOverloads constructor(
                     setImageResource(R.drawable.baseline_close_24)
                     setBackgroundColor(Color.Transparent.toArgb())
                     setColorFilter(
-                        CapsuleContent.toArgb(),
-                        PorterDuff.Mode.SRC_IN
+                        CapsuleContent.toArgb(), PorterDuff.Mode.SRC_IN
                     )
                     setOnClickListener {
                         Toast.makeText(
@@ -248,19 +245,19 @@ class OverlayView @JvmOverloads constructor(
                     getChildAt(index).layout(
                         // 按钮的左侧坐标
                         // 视图宽度 - 视图右边距 - 胶囊按钮右边距 - 胶囊按钮宽度 + 左侧偏移量
-                        viewWidth - paddingRight - computingCapsuleRightPadding() - computingCapsuleWidth() + leftOffset,
+                        viewWidth - paddingRight - computingCapsuleRightPadding - computingCapsuleWidth + leftOffset,
                         // 按钮的顶部坐标
                         // 胶囊按钮顶部边距 + 视图顶部边距
-                        computingCapsuleTopPadding() + paddingTop,
+                        computingCapsuleTopPadding + paddingTop,
                         // 按钮的右侧坐标
                         // 视图宽度 - 视图右边距 - 胶囊按钮右边距 - 胶囊按钮宽度 + 左侧偏移量 + 胶囊按钮宽度的一半
-                        viewWidth - paddingRight - computingCapsuleRightPadding() - computingCapsuleWidth() + leftOffset + computingCapsuleWidth() / 2,
+                        viewWidth - paddingRight - computingCapsuleRightPadding - computingCapsuleWidth + leftOffset + computingCapsuleWidth / 2,
                         // 按钮的底部坐标
                         // 胶囊按钮顶部边距 + 胶囊按钮高度 + 视图顶部边距
-                        computingCapsuleTopPadding() + computingCapsuleHeight() + paddingTop,
+                        computingCapsuleTopPadding + computingCapsuleHeight + paddingTop,
                     )
                     // 更新下一个按钮的起始位置
-                    leftOffset += computingCapsuleWidth() / 2
+                    leftOffset += computingCapsuleWidth / 2
                 }
                 // 跳出循环,拒绝其他子视图布局
                 else -> continue
@@ -339,25 +336,25 @@ class OverlayView @JvmOverloads constructor(
         sdkBannerPointList.add(
             Point(
                 x = 0F,
-                y = getBannerDistanceOriginPointLength - getBannerWidth.toFloat(),
+                y = computingBannerDistanceOriginPointLength - computingBannerWidth.toFloat(),
             ),
         )
         sdkBannerPointList.add(
             Point(
-                x = getBannerDistanceOriginPointLength - getBannerWidth.toFloat(),
+                x = computingBannerDistanceOriginPointLength - computingBannerWidth.toFloat(),
                 y = 0F,
             ),
         )
         sdkBannerPointList.add(
             Point(
-                x = getBannerDistanceOriginPointLength.toFloat(),
+                x = computingBannerDistanceOriginPointLength.toFloat(),
                 y = 0F,
             ),
         )
         sdkBannerPointList.add(
             Point(
                 x = 0F,
-                y = getBannerDistanceOriginPointLength.toFloat(),
+                y = computingBannerDistanceOriginPointLength.toFloat(),
             ),
         )
         return sdkBannerPointList
@@ -384,12 +381,12 @@ class OverlayView @JvmOverloads constructor(
     /**
      * 绘制横幅上的文字
      */
-    private fun ViewGroup.drawSdkText(canvas: Canvas, pointList: List<Point>) {
+    private fun drawSdkText(canvas: Canvas, pointList: List<Point>) {
         // 测量欲绘制文字宽度
         val bannerTextWidth = sdkBannerTextPaint.measureText(sdkBannerText)
         // 计算banner最短边长度
         val bannerShortestLength = (sqrt(
-            2 * (getBannerDistanceOriginPointLength - getBannerWidth).toDouble().pow(2)
+            2 * (computingBannerDistanceOriginPointLength - computingBannerWidth).toDouble().pow(2)
         )).toFloat()
         if (bannerTextWidth > bannerShortestLength) {
             // 如果最短边长度小于欲绘制文字长度,则对欲绘制文字剪裁,直到欲绘制文字比最短边长度小方可绘制文字
@@ -399,13 +396,14 @@ class OverlayView @JvmOverloads constructor(
         }
         // 计算banner最长边长度
         val bannerLongestLength =
-            (sqrt(2 * (getBannerDistanceOriginPointLength).toDouble().pow(2))).toFloat()
+            (sqrt(2 * (computingBannerDistanceOriginPointLength).toDouble().pow(2))).toFloat()
         val hOffset = bannerShortestLength / 2 - bannerTextWidth / 2
         // 单个直角边长度
         val oneOfTheRightAngleLength = (bannerLongestLength - bannerShortestLength) / 2
         // 计算banner的高度
-        val bannerHeight =
-            sqrt(getBannerWidth.toDouble().pow(2) - oneOfTheRightAngleLength.pow(2)).toFloat()
+        val bannerHeight = sqrt(
+            computingBannerWidth.toDouble().pow(2) - oneOfTheRightAngleLength.pow(2)
+        ).toFloat()
         val fontMetrics = sdkBannerTextPaint.fontMetrics
         // 计算baseLine偏移量
         val baseLineOffset = (fontMetrics.top + fontMetrics.bottom) / 2
@@ -424,25 +422,25 @@ class OverlayView @JvmOverloads constructor(
         debugBannerPointList.clear()
         debugBannerPointList.add(
             element = Point(
-                x = viewWidth - (getBannerDistanceOriginPointLength - getBannerWidth).toFloat(),
+                x = viewWidth - (computingBannerDistanceOriginPointLength - computingBannerWidth).toFloat(),
                 y = 0F,
             ),
         )
         debugBannerPointList.add(
             element = Point(
                 x = viewWidth.toFloat(),
-                y = (getBannerDistanceOriginPointLength - getBannerWidth).toFloat(),
+                y = (computingBannerDistanceOriginPointLength - computingBannerWidth).toFloat(),
             ),
         )
         debugBannerPointList.add(
             element = Point(
                 x = viewWidth.toFloat(),
-                y = getBannerDistanceOriginPointLength.toFloat(),
+                y = computingBannerDistanceOriginPointLength.toFloat(),
             ),
         )
         debugBannerPointList.add(
             element = Point(
-                x = (viewWidth - getBannerDistanceOriginPointLength).toFloat(),
+                x = (viewWidth - computingBannerDistanceOriginPointLength).toFloat(),
                 y = 0F,
             ),
         )
@@ -463,12 +461,12 @@ class OverlayView @JvmOverloads constructor(
         canvas.drawPath(debugBannerPath, debugBannerPaint)
     }
 
-    private fun ViewGroup.drawDebugText(canvas: Canvas, pointList: List<Point>) {
+    private fun drawDebugText(canvas: Canvas, pointList: List<Point>) {
         // 测量欲绘制文字宽度
         val bannerTextWidth = debugBannerTextPaint.measureText(debugBannerText)
         // 计算banner最短边长度
         val bannerShortestLength = (sqrt(
-            2 * (getBannerDistanceOriginPointLength - getBannerWidth).toDouble().pow(2)
+            2 * (computingBannerDistanceOriginPointLength - computingBannerWidth).toDouble().pow(2)
         )).toFloat()
         if (bannerTextWidth > bannerShortestLength) {
             // 如果最短边长度小于欲绘制文字长度,则对欲绘制文字剪裁,直到欲绘制文字比最短边长度小方可绘制文字
@@ -478,13 +476,14 @@ class OverlayView @JvmOverloads constructor(
         }
         // 计算banner最长边长度
         val bannerLongestLength =
-            (sqrt(2 * (getBannerDistanceOriginPointLength).toDouble().pow(2))).toFloat()
+            (sqrt(2 * (computingBannerDistanceOriginPointLength).toDouble().pow(2))).toFloat()
         val hOffset = bannerShortestLength / 2 - bannerTextWidth / 2
         // 单个直角边长度
         val oneOfTheRightAngleLength = (bannerLongestLength - bannerShortestLength) / 2
         // 计算banner的高度
-        val bannerHeight =
-            sqrt(getBannerWidth.toDouble().pow(2) - oneOfTheRightAngleLength.pow(2)).toFloat()
+        val bannerHeight = sqrt(
+            computingBannerWidth.toDouble().pow(2) - oneOfTheRightAngleLength.pow(2)
+        ).toFloat()
         val fontMetrics = debugBannerTextPaint.fontMetrics
         // 计算baseLine偏移量
         val baseLineOffset = (fontMetrics.top + fontMetrics.bottom) / 2
@@ -498,69 +497,105 @@ class OverlayView @JvmOverloads constructor(
         )
     }
 
-    private fun ViewGroup.drawCapsuleFill(canvas: Canvas) {
+    private fun drawCapsuleFill(canvas: Canvas) {
         setRoundRect(capsuleFillPath)
         canvas.drawPath(capsuleFillPath, capsuleFillPaint)
     }
 
-    private fun ViewGroup.drawCapsuleStroke(canvas: Canvas) {
+    private fun drawCapsuleStroke(canvas: Canvas) {
         setRoundRect(capsuleStrokePath)
         canvas.drawPath(capsuleStrokePath, capsuleStrokePaint)
     }
 
-    private fun ViewGroup.drawCapsuleDivider(canvas: Canvas) {
+    private fun drawCapsuleDivider(canvas: Canvas) {
         canvas.drawLine(
-            (viewWidth - (computingCapsuleWidth() / 2) - computingCapsuleRightPadding() - paddingRight).toFloat(),
-            (computingCapsuleTopPadding() + paddingTop + 4.toDp).toFloat(),
-            (viewWidth - (computingCapsuleWidth() / 2) - computingCapsuleRightPadding() - paddingRight).toFloat(),
-            (computingCapsuleTopPadding() + computingCapsuleHeight() + paddingTop - 4.toDp).toFloat(),
+            (viewWidth - (computingCapsuleWidth / 2) - computingCapsuleRightPadding - paddingRight).toFloat(),
+            (computingCapsuleTopPadding + paddingTop + computingCapsuleDividerIndent).toFloat(),//4dp
+            (viewWidth - (computingCapsuleWidth / 2) - computingCapsuleRightPadding - paddingRight).toFloat(),
+            (computingCapsuleTopPadding + computingCapsuleHeight + paddingTop - computingCapsuleDividerIndent).toFloat(),
             capsuleDividerPaint,
         )
     }
 
-    private fun ViewGroup.setRoundRect(path: Path) {
+    private fun setRoundRect(path: Path) {
         path.reset()
         path.addRoundRect(
             RectF(
-                (viewWidth - computingCapsuleWidth() - computingCapsuleRightPadding() - paddingRight).toFloat(),
-                (computingCapsuleTopPadding() + paddingTop).toFloat(),
-                (viewWidth - computingCapsuleRightPadding() - paddingRight).toFloat(),
-                (computingCapsuleTopPadding() + computingCapsuleHeight() + paddingTop).toFloat()
+                (viewWidth - computingCapsuleWidth - computingCapsuleRightPadding - paddingRight).toFloat(),
+                (computingCapsuleTopPadding + paddingTop).toFloat(),
+                (viewWidth - computingCapsuleRightPadding - paddingRight).toFloat(),
+                (computingCapsuleTopPadding + computingCapsuleHeight + paddingTop).toFloat()
             ),
-            computingCapsuleRadius().toFloat(),
-            computingCapsuleRadius().toFloat(),
+            computingCapsuleRadius.toFloat(),
+            computingCapsuleRadius.toFloat(),
             Path.Direction.CW,
         )
     }
 
 
-    private fun computingCapsuleWidth(): Int {
-        return convertDpToPx(context = context, value = capsuleWidth)
-    }
+    private val computingCapsuleWidth: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleWidth,
+        )
 
-    private fun computingCapsuleHeight(): Int {
-        return convertDpToPx(context = context, value = capsuleHeight)
-    }
+    private val computingCapsuleHeight: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleHeight,
+        )
 
     /** 胶囊顶部边距 */
-    private fun computingCapsuleTopPadding(): Int {
-        return (computingActionBarExpandedHeight() - computingCapsuleHeight()) / 2
-    }
+    private val computingCapsuleTopPadding: Int
+        get() = (computingActionBarExpandedHeight - computingCapsuleHeight) / 2
 
-    private fun computingCapsuleRightPadding(): Int {
-        return convertDpToPx(context = context, value = capsuleRightPadding)
-    }
+    private val computingCapsuleRightPadding: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleRightPadding,
+        )
 
-    private fun computingCapsuleRadius(): Int {
-        return convertDpToPx(context = context, value = capsuleRadius)
-    }
+    private val computingCapsuleDividerIndent: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleIndent,
+        )
 
-    private fun computingActionBarExpandedHeight(): Int {
-        return convertDpToPx(context = context, value = actionBarExpandedHeight)
-    }
+    private val computingCapsuleRadius: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleRadius,
+        )
 
-    private val getBannerDistanceOriginPointLength get() = convertDpToPx(context = context, value = bannerDistanceOriginPointLength)
-    private val getBannerWidth get() = convertDpToPx(context = context, value = bannerWidth)
+    private val computingActionBarExpandedHeight: Int
+        get() = convertDpToPx(
+            context = context,
+            value = actionBarExpandedHeight,
+        )
+
+    private val computingBannerDistanceOriginPointLength: Int
+        get() = convertDpToPx(
+            context = context,
+            value = bannerDistanceOriginPointLength,
+        )
+
+    private val computingBannerWidth: Int
+        get() = convertDpToPx(
+            context = context,
+            value = bannerWidth,
+        )
+
+    private val computingCapsuleStrokeWidth: Int
+        get() = convertDpToPx(
+            context = context,
+            value = capsuleStrokeWidth,
+        )
+
+    private val computingBannerTextSize: Int
+        get() = convertSpToPx(
+            context = context,
+            value = BannerTextSize,
+        )
 
     companion object {
         private const val MENU_BUTTON_TAG: String = "menu"

@@ -18,6 +18,10 @@ val capsuleRightPadding: Dp = 16.dp
 // 胶囊圆角半径
 val capsuleRadius: Dp = 20.dp
 
+val capsuleStrokeWidth: Dp = 1.dp
+val capsuleIndent: Dp = 4.dp
+
+
 // ActionBar 默认高度
 @OptIn(ExperimentalMaterial3Api::class)
 val actionBarExpandedHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight
