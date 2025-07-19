@@ -66,7 +66,6 @@ fun MPTopBar(
                     Box(
                         modifier = Modifier
                             .padding(start = (16 - 4).dp) // TopAppBar 自带 4dp 左边距
-                            .systemBarsPadding()
                             .width(width = capsuleWidth.toDp.toDp())
                             .height(height = capsuleHeight.toDp.toDp())
                             .clip(shape = RoundedCornerShape(size = capsuleRadius.toDp.toDp()))

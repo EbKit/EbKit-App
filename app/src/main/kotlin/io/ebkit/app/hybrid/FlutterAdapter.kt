@@ -8,14 +8,20 @@ import io.flutter.embedding.android.FlutterFragment
 class FlutterAdapter(
     activity: FragmentActivity,
     flutter: FlutterFragment?,
-) : FragmentStateAdapter(activity) {
-    private val mFlutterFragment = flutter
+) : FragmentStateAdapter(
+    activity,
+) {
 
+    /** Flutter */
+    private val mFlutter = flutter
+
+    /** 获取 Fragment 数量 */
     override fun getItemCount() = 1
 
+    /** 创建 Fragment */
     override fun createFragment(position: Int): Fragment {
-        return mFlutterFragment ?: error(
-            message = "mFlutterFragment is null!",
+        return mFlutter ?: error(
+            message = "Flutter is null!",
         )
     }
 }
