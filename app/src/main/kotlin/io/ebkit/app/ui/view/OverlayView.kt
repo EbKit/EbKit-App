@@ -19,6 +19,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import io.ebkit.app.BuildConfig
 import io.ebkit.app.R
+import io.ebkit.app.ui.theme.actionBarExpandedHeight
 import io.ebkit.app.ui.theme.capsuleHeight
 import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleRightPadding
@@ -37,11 +38,6 @@ class OverlayView @JvmOverloads constructor(
     private var viewWidth = 0
     private var viewHeight = 0
 
-    /** 胶囊顶部边距 */
-    private val capsuleTopPadding get() = ((actionBarHeight.toDp) - capsuleHeight.toDp) / 2
-
-
-    private val actionBarHeight: Int = 65
 
     /** 是否显示调试信息 */
     private val show: Boolean = BuildConfig.DEBUG
@@ -120,6 +116,11 @@ class OverlayView @JvmOverloads constructor(
     private var sdkBannerText: String = "ECOSED"
     private var debugBannerText: String = "DEBUG"
 
+    data class Point(
+        val x: Float,
+        val y: Float,
+    )
+
     private val sdkBannerPointList by lazy {
         mutableListOf<Point>()
     }
@@ -127,11 +128,6 @@ class OverlayView @JvmOverloads constructor(
     private val debugBannerPointList by lazy {
         mutableListOf<Point>()
     }
-
-    private data class Point(
-        val x: Float,
-        val y: Float,
-    )
 
 
     /**
@@ -239,13 +235,13 @@ class OverlayView @JvmOverloads constructor(
                         viewWidth - paddingRight - capsuleRightPadding.toDp - capsuleWidth.toDp + leftOffset,
                         // 按钮的顶部坐标
                         // 胶囊按钮顶部边距 + 视图顶部边距
-                        capsuleTopPadding + paddingTop,
+                        computingCapsuleTopPadding() + paddingTop,
                         // 按钮的右侧坐标
                         // 视图宽度 - 视图右边距 - 胶囊按钮右边距 - 胶囊按钮宽度 + 左侧偏移量 + 胶囊按钮宽度的一半
                         viewWidth - paddingRight - capsuleRightPadding.toDp - capsuleWidth.toDp + leftOffset + capsuleWidth.toDp / 2,
                         // 按钮的底部坐标
                         // 胶囊按钮顶部边距 + 胶囊按钮高度 + 视图顶部边距
-                        capsuleTopPadding + capsuleHeight.toDp + paddingTop,
+                        computingCapsuleTopPadding() + capsuleHeight.toDp + paddingTop,
                     )
                     // 更新下一个按钮的起始位置
                     leftOffset += capsuleWidth.toDp / 2
@@ -496,9 +492,9 @@ class OverlayView @JvmOverloads constructor(
     private fun ViewGroup.drawCapsuleDivider(canvas: Canvas) {
         canvas.drawLine(
             (viewWidth - (capsuleWidth.toDp / 2) - capsuleRightPadding.toDp - paddingRight).toFloat(),
-            (capsuleTopPadding + paddingTop + 4.toDp).toFloat(),
+            (computingCapsuleTopPadding() + paddingTop + 4.toDp).toFloat(),
             (viewWidth - (capsuleWidth.toDp / 2) - capsuleRightPadding.toDp - paddingRight).toFloat(),
-            (capsuleTopPadding + capsuleHeight.toDp + paddingTop - 4.toDp).toFloat(),
+            (computingCapsuleTopPadding() + capsuleHeight.toDp + paddingTop - 4.toDp).toFloat(),
             capsuleDividerPaint,
         )
     }
@@ -508,14 +504,19 @@ class OverlayView @JvmOverloads constructor(
         path.addRoundRect(
             RectF(
                 (viewWidth - capsuleWidth.toDp - capsuleRightPadding.toDp - paddingRight).toFloat(),
-                (capsuleTopPadding + paddingTop).toFloat(),
+                (computingCapsuleTopPadding() + paddingTop).toFloat(),
                 (viewWidth - capsuleRightPadding.toDp - paddingRight).toFloat(),
-                (capsuleTopPadding + capsuleHeight.toDp + paddingTop).toFloat()
+                (computingCapsuleTopPadding() + capsuleHeight.toDp + paddingTop).toFloat()
             ),
             capsuleRadius.toDp.toFloat(),
             capsuleRadius.toDp.toFloat(),
             Path.Direction.CW,
         )
+    }
+
+    /** 胶囊顶部边距 */
+    private fun computingCapsuleTopPadding(): Int {
+        return ((actionBarExpandedHeight.toDp) - capsuleHeight.toDp) / 2
     }
 
     companion object {

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.ebkit.app.IViewFactory
 import io.ebkit.app.ui.theme.EbKitTheme
+import io.ebkit.app.ui.theme.actionBarExpandedHeight
 import io.ebkit.app.ui.theme.capsuleHeight
 import io.ebkit.app.ui.theme.capsuleRadius
 import io.ebkit.app.ui.theme.capsuleRightPadding
@@ -61,7 +62,7 @@ fun OverlayLayer(
                     Row(
                         modifier = Modifier
                             .padding(
-                                top = ((65.dp - capsuleHeight.toDp.toDp()) / 2), // TopAppBar 高度65
+                                top = ((actionBarExpandedHeight.toDp.toDp() - capsuleHeight.toDp.toDp()) / 2), // TopAppBar 高度65
                                 end = capsuleRightPadding.toDp.toDp(),
                             )
                             .systemBarsPadding()
